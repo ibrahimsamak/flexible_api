@@ -27,7 +27,7 @@ fastify.register(require("fastify-cors"), {});
 
 // Connect to DB
 mongoose
-  .connect("mongodb+srv://ibrahim:GgQfcQ7MYt8hz7Q0@cluster0.ddrmy.mongodb.net/jazcom?retryWrites=true&w=majority", {
+  .connect("mongodb+srv://ibrahim:GgQfcQ7MYt8hz7Q0@cluster0.ddrmy.mongodb.net/flex?retryWrites=true&w=majority", {
     useNewUrlParser: true,
     useFindAndModify: false,
     useCreateIndex: true,

@@ -128,18 +128,32 @@ exports.getSingleUsers = async (req, reply) => {
   const language = req.headers["accept-language"];
   try {
     const user_id = req.user._id;
-    const _Users = await Users.findById(user_id).select();
-    const address = await User_Address.find({
-      $and: [{ user_id: user_id }],
-    });
+    const _Users = await Users.findById(user_id)
+    .populate("categories")
+    .populate("country")
+    .select();
     var newUser = _Users.toObject();
-    const orders = await Order.find({
-      $and: [{ user_id: user_id }, { StatusId: 4 }],
-    }).countDocuments();
-    // const favorits = await Favorite.find({ user_id: user_id }).countDocuments();
-    // newUser.favorite = favorits;
-    newUser.orders = orders;
-    newUser.delivery_address = address;
+    var subs = []
+    var country = null
+    if(newUser.country){
+      country = {
+        _id: newUser.country._id,
+        title: newUser.country[`${language}Name`],
+      }
+    }
+    if(_Users.categories){
+      _Users.categories.forEach(_newObject => {
+        var obj = {
+          _id: _newObject._id,
+          title: _newObject[`${language}Name`],
+          description: _newObject[`${language}Description`],
+        };
+        subs.push(obj)
+      });
+    }
+    
+    newUser.country = country
+    newUser.categories = subs
     reply
       .code(200)
       .send(
@@ -168,10 +182,10 @@ exports.addUsers = async (req, reply) => {
     setLanguage(language);
     validateUsers(req.body);
 
-    var newUser = new Users({
+    var _newUser = new Users({
       phone_number: req.body.phone_number,
     });
-    newUser.validate((err) => {
+    _newUser.validate((err) => {
       if (err) {
         let msg = getErrors(err);
         reply.code(200).send(errorAPI(language, 400, msg, msg));
@@ -231,26 +245,33 @@ exports.addUsers = async (req, reply) => {
             ),
           },
           { new: true }
-        );
-        let msg = "مرحبا بكم في تطبيق خوي رمز التفعيل هو: " + verify_code;
-        console.log(req.body.phone_number)
+        )
+        .populate("categories")
+        .populate("country");
+        let msg = "مرحبا بكم في تطبيق جاز توك رمز التفعيل هو: " + verify_code;
         sendSMS(req.body.phone_number, "", "", msg);
-
-        const address = await User_Address.find({
-          $and: [{ user_id: rs._id }],
-        });
         var newUser = rs.toObject();
-        const orders = await Order.find({
-          $and: [{ user_id: rs._id }, { StatusId: 4 }],
-        }).countDocuments();
-        // const favorits = await Favorite.find({
-        //   user_id: rs._id,
-        // }).countDocuments();
-        // newUser.favorite = favorits;
-        newUser.orders = orders;
-        newUser.delivery_address = address;
-       
-
+        var subs = []
+        var country = null
+        if(newUser.country){
+          country = {
+            _id: newUser.country._id,
+            title: newUser.country[`${language}Name`],
+          }
+        }
+        if(newUser.categories){
+          newUser.categories.forEach(_newObject => {
+            var obj = {
+              _id: _newObject._id,
+              title: _newObject[`${language}Name`],
+              description: _newObject[`${language}Description`],
+            };
+            subs.push(obj)
+          });
+        }
+        
+        newUser.country = country
+        newUser.categories = subs
         reply
           .code(200)
           .send(
@@ -269,46 +290,36 @@ exports.addUsers = async (req, reply) => {
       //send sms
       let user = new Users({
         full_name: "",
+        reg_no: "",
+        phone_number: req.body.phone_number,
         email: "",
         password: "",
-        phone_number: req.body.phone_number,
+        image: "",
+        id_image: "",
+        dob: null,
+        bio: "",
+        address: "",
         os: req.body.os,
         lat: parseFloat(req.body.lat),
         lng: parseFloat(req.body.lng),
-        coordinates:[req.body.lat, req.body.lng],
-        fcmToken: req.body.fcmToken,
-        createAt: getCurrentDateTime(),
         verify_code: verify_code,
-        isVerify: false,
-        isBlock: false,
-        wallet: 0,
         isEnableNotifications: true,
         token: "",
-        image: "",
-        address: req.body.address,
+        fcmToken: req.body.fcmToken,
+        country: null,
+        categories: [],
+        register_type:req.body.register_type,
+        app_type: req.body.app_type,
+        loc: {
+          type: "Point",
+          coordinates: [req.body.lat, req.body.lng],
+        },        
       });
       let rs = await user.save();
-      let msg = "مرحبا بكم في تطبيق خوي رمز التفعيل هو: " + verify_code;
+      let msg = "مرحبا بكم في تطبيق جاز توك رمز التفعيل هو: " + verify_code;
       console.log(req.body.phone_number)
       sendSMS(req.body.phone_number, "", "", msg);
-      
-
-      const address = await User_Address.find({
-        $and: [{ user_id: rs._id }],
-      });
-      var newUser = rs.toObject();
-      const orders = await Order.find({
-        $and: [{ user_id: rs._id }, { StatusId: 4 }],
-      }).countDocuments();
-      // const favorits = await Favorite.find({
-      //   user_id: rs._id,
-      // }).countDocuments();
-      // newUser.favorite = favorits;
-      newUser.orders = orders;
-      newUser.delivery_address = address;
-
-      
-
+            
       reply
         .code(200)
         .send(
@@ -317,7 +328,7 @@ exports.addUsers = async (req, reply) => {
             200,
             MESSAGE_STRING_ARABIC.CREATE_USER,
             MESSAGE_STRING_ENGLISH.CREATE_USER,
-            newUser
+            rs
           )
         );
       return;
@@ -381,21 +392,31 @@ exports.verify = async (req, reply) => {
           ),
         },
         { new: true }
-      );
-      const address = await User_Address.find({
-        $and: [{ user_id: update._id }],
-      });
+      )
+      .populate('categories')
+      .populate('country');
       var newUser = update.toObject();
-      const orders = await Order.find({
-        $and: [{ user_id: update._id }, { StatusId: 4 }],
-      }).countDocuments();
-      // const favorits = await Favorite.find({
-      //   user_id: update._id,
-      // }).countDocuments();
-      // newUser.favorite = favorits;
-      newUser.orders = orders;
-      newUser.delivery_address = address;
-
+      var subs = []
+      var country = null
+      if(newUser.country){
+        country = {
+          _id: newUser.country._id,
+          title: newUser.country[`${language}Name`],
+        }
+      }
+      if(newUser.categories){
+        newUser.categories.forEach(_newObject => {
+          var obj = {
+            _id: _newObject._id,
+            title: _newObject[`${language}Name`],
+            description: _newObject[`${language}Description`],
+          };
+          subs.push(obj)
+        });
+      }
+      
+      newUser.country = country
+      newUser.categories = subs
       var orderNo = `#${utils.makeid(6)}`;
       const settings = await setting.findOne({code:"WALLET_REFERAL"});
       await NewPayment(update._id, orderNo, "دعوة من احد الأصدقاء", "+" , Number(settings.value), "Online")
@@ -410,8 +431,8 @@ exports.verify = async (req, reply) => {
           success(
             language,
             200,
-            MESSAGE_STRING_ARABIC.USER_VERIFY,
-            MESSAGE_STRING_ENGLISH.USER_VERIFY,
+            MESSAGE_STRING_ARABIC.USER_VERIFY_SUCCESS,
+            MESSAGE_STRING_ENGLISH.USER_VERIFY_SUCCESS,
             newUser
           )
         );
@@ -423,8 +444,8 @@ exports.verify = async (req, reply) => {
           errorAPI(
             language,
             400,
-            MESSAGE_STRING_ARABIC.USER_VERIFY_SUCCESS,
-            MESSAGE_STRING_ENGLISH.USER_VERIFY_SUCCESS
+            MESSAGE_STRING_ARABIC.USER_NOT_FOUND,
+            MESSAGE_STRING_ENGLISH.USER_NOT_FOUND
           )
         );
       return;
@@ -515,7 +536,6 @@ exports.forgetPassword = async (req, reply) => {
 exports.updateProfile = async (req, reply) => {
   const language = req.headers["accept-language"];
   // try {
-    console.log(req.user._id)
     if (
       !req.raw.body.email ||
       !req.raw.body.full_name ||
@@ -583,52 +603,58 @@ exports.updateProfile = async (req, reply) => {
         await uploadImages(files.image.name).then((x) => {
           img = x;
         });
-
-        if (req.raw.body.lat && req.raw.body.lng && req.raw.body.address) {
-          await User_Address.deleteMany({ user_id: req.user._id },function (err, docs) {});
-
-          // let rs = new User_Address({
-          //   lat: req.raw.body.lat,
-          //   lng: req.raw.body.lng,
-          //   address: req.raw.body.address,
-          //   user_id: req.user._id,
-          //   isDefault: true,
-          // });
-          // await rs.save();
-
-          const _newUser = await Users.findByIdAndUpdate(
-            req.user._id,
-            {
-              lat: req.raw.body.lat,
-              lng: req.raw.body.lng,
-              address: req.raw.body.address,
-
-              streetName: req.raw.body.streetName,
-              floorNo: req.raw.body.floorNo,
-              buildingNo: req.raw.body.buildingNo,
-              flatNo: req.raw.body.flatNo
-            },
-            { new: true }
-          );
-        }
+        
+        let id_img = "";
+        await uploadImages(files.id_image.name).then((x) => {
+          id_img = x;
+        });
 
         const _newUser = await Users.findByIdAndUpdate(
           req.user._id,
           {
             image: img,
+            id_image: id_img,
             email: String(req.raw.body.email).toLowerCase(),
             full_name: req.raw.body.full_name,
+            bio: req.raw.body.bio,
+            reg_no: req.raw.body.reg_no,
+            address: req.raw.body.address,
+            country: req.raw.body.country,
+            city: req.raw.body.city,
+            dob:  req.raw.body.dob,
+            bio:  req.raw.body.bio,
+            lat:  req.raw.body.lat,
+            lng:  req.raw.body.lng,
+            categories:  req.raw.body.categories,
+            loc:  {
+              type: "Point",
+              coordinates: [req.raw.body.lat, req.raw.body.lng],
+            },   
           },
           { new: true }
         ).select();
-        console.log(_newUser)
-        const address = await User_Address.find({$and: [{ user_id: _newUser._id }]});
         var newUser = _newUser.toObject();
-        const orders = await Order.find({ $and: [{ user_id: _newUser._id }, { status: {$in:[ORDER_STATUS.prefinished, ORDER_STATUS.finished, ORDER_STATUS.rated]} }]}).countDocuments();
-        // const favorits = await Favorite.find({ user_id: _newUser._id}).countDocuments();
-        // newUser.favorite = favorits;
-        newUser.orders = orders;
-        newUser.delivery_address = address;
+        var subs = []
+        var country = null
+        if(newUser.country){
+          country = {
+            _id: newUser.country._id,
+            title: newUser.country[`${language}Name`],
+          }
+        }
+        if(newUser.categories){
+          newUser.categories.forEach(_newObject => {
+            var obj = {
+              _id: _newObject._id,
+              title: _newObject[`${language}Name`],
+              description: _newObject[`${language}Description`],
+            };
+            subs.push(obj)
+          });
+        }
+        
+        newUser.country = country
+        newUser.categories = subs
 
         reply
           .code(200)
@@ -643,59 +669,49 @@ exports.updateProfile = async (req, reply) => {
           );
         return;
       } else {
-        if (req.raw.body.lat && req.raw.body.lng && req.raw.body.address) {
-          await User_Address.deleteMany(
-            { user_id: req.user._id },
-            function (err, docs) {}
-          );
-
-          // let rs = new User_Address({
-          //   lat: req.raw.body.lat,
-          //   lng: req.raw.body.lng,
-          //   address: req.raw.body.address,
-          //   user_id: req.user._id,
-          //   isDefault: true,
-          // });
-          // await rs.save();
-
-          await Users.findByIdAndUpdate(
-            req.user._id,
-            {
-              lat: req.raw.body.lat,
-              lng: req.raw.body.lng,
-              address: req.raw.body.address,
-              streetName: req.raw.body.streetName,
-              floorNo: req.raw.body.floorNo,
-              buildingNo: req.raw.body.buildingNo,
-              flatNo: req.raw.body.flatNo
-            },
-            { new: true }
-          );
-        }
-
         const _newUser = await Users.findByIdAndUpdate(
           req.user._id,
           {
             email: String(req.raw.body.email).toLowerCase(),
             full_name: req.raw.body.full_name,
+            bio: req.raw.body.bio,
+            reg_no: req.raw.body.reg_no,
+            address: req.raw.body.address,
+            country: req.raw.body.country,
+            city: req.raw.body.city,
+            dob:  req.raw.body.dob,
+            bio:  req.raw.body.bio,
+            lat:  req.raw.body.lat,
+            lng:  req.raw.body.lng,
+            categories:  req.raw.body.categories,
+            loc:  {
+              type: "Point",
+              coordinates: [req.raw.body.lat, req.raw.body.lng],
+            },   
           },
           { new: true }
         ).select();
-
-        const address = await User_Address.find({
-          $and: [{ user_id: _newUser._id }],
-        });
         var newUser = _newUser.toObject();
-        const orders = await Order.find({
-          $and: [{ user_id: _newUser._id }, { StatusId: 4 }],
-        }).countDocuments();
-        // const favorits = await Favorite.find({
-        //   user_id: _newUser._id,
-        // }).countDocuments();
-        // newUser.favorite = favorits;
-        newUser.orders = orders;
-        newUser.delivery_address = address;
-
+        var subs = []
+        var country = null
+        if(newUser.country){
+          country = {
+            _id: newUser.country._id,
+            title: newUser.country[`${language}Name`],
+          }
+        }
+        if(newUser.categories){
+          newUser.categories.forEach(_newObject => {
+            var obj = {
+              _id: _newObject._id,
+              title: _newObject[`${language}Name`],
+              description: _newObject[`${language}Description`],
+            };
+            subs.push(obj)
+          });
+        }  
+        newUser.country = country
+        newUser.categories = subs
         reply
           .code(200)
           .send(

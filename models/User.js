@@ -21,6 +21,9 @@ const UserSchema = mongoose.Schema(
     full_name: {
       type: String,
     },
+    reg_no: {
+      type: String,
+    },
     phone_number: {
       type: String,
     },
@@ -29,12 +32,24 @@ const UserSchema = mongoose.Schema(
     },
     password: {
       type: String,
+      default: ""
     },
     image: {
       type: String,
     },
+    id_image: {
+      type: String,
+    },
+    dob:{
+      type: Date
+    },
+    bio: {
+      type: String,
+      default: ""
+    },
     address: {
       type: String,
+      default: ""
     },
     lat: {
       type: Number,
@@ -73,29 +88,29 @@ const UserSchema = mongoose.Schema(
     os: {
       type: String,
     },
-    streetName:{
-      type: String,
-      default: "",
-    },
-    floorNo:{
-      type: String,
-      default: "",
-    },
-    buildingNo:{
-      type: String,
-      default: "",
-    },
-    flatNo:{
-      type: String,
-      default: ""
-    },
     rate:{
       type: Number ,
       default: 0,
     },
+    country: {
+      type: mongoose.Schema.Types.ObjectId, ref: "countries",
+    },
+    categories:{type:[ {type: mongoose.Schema.Types.ObjectId, ref: "category"} ]},
+    register_type:{
+      type:String,
+      enum:['personal','company']
+    },
+    app_type:{
+      type:String,
+      enum:['customer','provider']
+    },
     by:{
       type: String,
       default: ""
+    },
+    loc: {
+      type: { type: String },
+      coordinates: [],
     },
   },
   { versionKey: false }
@@ -266,6 +281,8 @@ const UnCoveredSchema = mongoose.Schema(
   },
   { versionKey: false }
 );
+
+UserSchema.index({ loc: "2dsphere" }); 
 
 // var users = new Schema(Joigoose.convert(joiSchema));
 const Users = mongoose.model("Users", UserSchema);

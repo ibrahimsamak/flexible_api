@@ -139,7 +139,6 @@ exports.getAllCategoryAndSubCategory = async (req, reply) => {
           $and:[{isDeleted: false},{category_id:newObject._id }]
         }
       }
-      console.log(query1)
       var _subs = await SubCategory.find(query1).sort({ _id: -1 });
       for await(const i of _subs){
         var _newObject = i.toObject();
@@ -203,7 +202,7 @@ exports.addReplyComplains = async (req, reply) => {
       full_name: complaintsData.full_name,
       msg: req.body.message,
     };
-    let subject = "رد من ادارة منصة خوي";
+    let subject = "رد من ادارة منصة جاز توك";
     mail_general(req, req.body.email, subject, req.body.message, data);
     reply
       .code(200)
@@ -737,12 +736,26 @@ exports.getSingleCountry = async (req, reply) => {
 
 exports.getSettings = async (req, reply) => {
   try {
+    let language = "ar";
     const settings = await setting.find().sort({ _id: -1 });
+    const _country = await country.find().sort({ _id: -1 });
+    var arr = []
+    _country.forEach(element => {
+      var obj = {
+        _id : element._id,
+        title: element[`${language}Name`],
+      }
+      arr.push(obj)
+    });
+    var obj = {
+      settings:settings,
+      coutnry: arr
+    }
     const response = {
       status_code: 200,
       status: true,
       message: "تمت العملية بنجاح",
-      items: settings,
+      items: obj,
     };
     reply.code(200).send(response);
   } catch (err) {
@@ -3059,7 +3072,35 @@ exports.addCategory = async (req, reply) => {
       items: rs,
     };
     reply.code(200).send(response);
-    } 
+    } else{
+      let _Category = new Category({
+        arName: req.raw.body.arName,
+        enName: req.raw.body.enName,
+        enDescription: req.raw.body.enDescription,
+        arDescription: req.raw.body.arDescription,  
+        // image: img,
+        isDeleted: false,
+        // sort: req.raw.body.sort,
+      });
+      var _return = handleError(_Category.validateSync());
+      if (_return.length > 0) {
+        reply.code(200).send({
+          status_code: 400,
+          status: false,
+          message: _return[0],
+          items: _return,
+        });
+        return;
+      }
+      let rs = await _Category.save();
+      const response = {
+        status_code: 200,
+        status: true,
+        message: "تمت العملية بنجاح",
+        items: rs,
+      };
+      reply.code(200).send(response);
+    }
   }catch (err) {
     throw boom.boomify(err);
   }

@@ -653,7 +653,7 @@ exports.addProvider = async (req, reply) => {
         email: rs.email,
         password: decryptPasswordfunction(rs.password),
       };
-      mail_welcome(req, rs.email, "منصة خوي", "", data);
+      mail_welcome(req, rs.email, "منصة جاز توك", "", data);
 
       reply
         .code(200)
@@ -1301,7 +1301,7 @@ exports.addSupervisor = async (req, reply) => {
         email: rs.email,
         password: decryptPasswordfunction(rs.password),
       };
-      mail_welcome(req, rs.email, "منصة خوي", "", data);
+      mail_welcome(req, rs.email, "منصة جاز توك", "", data);
 
       reply
         .code(200)

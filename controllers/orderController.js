@@ -81,10 +81,7 @@ exports.addOrder = async (req, reply) => {
       var validationArray = [
         { name: "couponCode" },
         { name: "paymentType" },
-        { name: "category_id" },
-        { name: "sub_category_id" },
-        { name: "dt_date" },
-        { name: "dt_time" },
+        { name: "category" }
       ];
 
       validationArray.push({ name: "lat" });
@@ -94,148 +91,61 @@ exports.addOrder = async (req, reply) => {
           var userId = req.user._id;
           const userObj = await Users.findById(userId);
           const tax = await setting.findOne({ code: "TAX" });
-          const sub_category = await SubCategory.findById(req.body.sub_category_id);
           var orderNo = `${makeOrderNumber(6)}`;
           var _supplier = null;
-          var _employee = null;
 
-          var PoinInPolygon = await place.find({
-            $and: [
-              {
-                loc: {
-                  $geoIntersects: {
-                    $geometry: {
-                      type: "Point",
-                      coordinates: [Number(req.body.lng), Number(req.body.lat)],
-                    },
-                  },
-                },
-              },
-              { isDeleted: false },
-            ],
-          });
-          if (PoinInPolygon.length == 0) {
-            let rs = new User_Uncovered({
-              user_id: userId,
-              user_type: "",
-              lat: req.body.lat,
-              lng: req.body.lng,
-              address: req.body.address,
-            });
-            await rs.save();
 
-            reply
-              .code(200)
-              .send(
-                errorAPI(
-                  language,
-                  400,
-                  MESSAGE_STRING_ARABIC.NOT_COVERED,
-                  MESSAGE_STRING_ENGLISH.NOT_COVERED,
-                  {}
-                )
-              );
-            return;
-     
-          } 
-
-          let check_category= await Product_Price.findOne({$and:[{place_id:PoinInPolygon[0]._id}, {category_id:req.body.category_id}]})
-          if(!check_category){
-            let rs = new User_Uncovered({
-              user_id: userId,
-              user_type: "",
-              lat: req.body.lat,
-              lng: req.body.lng,
-              address: req.body.address,
-            });
-            await rs.save();
-
-            reply
-              .code(200)
-              .send(
-                errorAPI(
-                  language,
-                  400,
-                  MESSAGE_STRING_ARABIC.NOT_COVERED,
-                  MESSAGE_STRING_ENGLISH.NOT_COVERED,
-                  {}
-                )
-              );
-            return;
-          }
-
-          _supplier = check_category.supplier_id 
-
-          if(req.body.couponCode && req.body.couponCode != ""){
-            let obj =  await check_coupon(req.user._id, req.body.couponCode, req.body.sub_category_id)
-            if(obj == null){
-              reply
-              .code(200)
-              .send(
-                errorAPI(
-                  language,
-                  400,
-                  MESSAGE_STRING_ARABIC.COUPON_ERROR,
-                  MESSAGE_STRING_ENGLISH.COUPON_ERROR,
-                  null
-                )
-              );
-              return;
-            }
-            total = obj.final_total;
-            total_discount = obj.discount;
-            total_tax = obj.total_tax
-          }else{
-            total = (Number(sub_category.price) * Number(tax.value)) + Number(sub_category.price)
-            total_tax = (Number(sub_category.price) * Number(tax.value))
-          }
-          var address = req.body.address;
-          if(!req.body.address || req.body.address == ""){
-            let rs = new User_Address({
-              title: req.body.title,
-              lat: req.body.lat,
-              lng: req.body.lng,
-              address: req.body.address,
-              user_id: userId,
-              isDefault: false,
-              discount: 0,
-              streetName: req.body.streetName,
-              floorNo: req.body.floorNo,
-              buildingNo: req.body.buildingNo,
-              flatNo: req.body.flatNo,
-              type: 'home'
-            });
-        
-            let _rs = await rs.save();
-            address = _rs._id;
-          }
+          // if(req.body.couponCode && req.body.couponCode != ""){
+          //   let obj =  await check_coupon(req.user._id, req.body.couponCode, req.body.sub_category_id)
+          //   if(obj == null){
+          //     reply
+          //     .code(200)
+          //     .send(
+          //       errorAPI(
+          //         language,
+          //         400,
+          //         MESSAGE_STRING_ARABIC.COUPON_ERROR,
+          //         MESSAGE_STRING_ENGLISH.COUPON_ERROR,
+          //         null
+          //       )
+          //     );
+          //     return;
+          //   }
+          //   total = obj.final_total;
+          //   total_discount = obj.discount;
+          //   total_tax = obj.total_tax
+          // }else{
+          //   total = (Number(sub_category.price) * Number(tax.value)) + Number(sub_category.price)
+          //   total_tax = (Number(sub_category.price) * Number(tax.value))
+          // }
           let Orders = new Order({
+            order_type: req.body.order_type,
+            offer_type: req.body.offer_type,
+            target: req.body.target,
+            price_type: req.body.price_type,
+            execution_type: req.body.execution_type,
+            title: req.body.title,
+            bio: req.body.bio,
+            employee_no: req.body.employee_no,
+            days: req.body.days,      
             lat: req.body.lat,
             lng: req.body.lng,           
-            price: sub_category.price,
-            address: address,
+            price: 0,
             order_no: orderNo,
             tax: Number(total_tax),
-            total: total,
-            totalDiscount: total_discount,
-            netTotal: total,
+            total: 0,
+            totalDiscount: 0,
+            netTotal: 0,
             status: ORDER_STATUS.new,
             createAt: getCurrentDateTime(),
-            dt_date: req.body.dt_date,
-            dt_time: req.body.dt_time,
-            sub_category_id: req.body.sub_category_id,
-            category_id: req.body.category_id,
-            addressType: req.body.addressType,
+            category: req.body.category,
             couponCode: req.body.couponCode,
-            paymentType: req.body.paymentType,
+            paymentType: "",
             user: userId,
             notes: req.body.notes,
             canceled_note:"",
-            employee: null,
-            provider: _supplier,
-            supervisor: null,
-            place: PoinInPolygon[0]._id,
-            extra: [],
+            provider: null,
+            offers:[],
             loc: {
               type: "Point",
               coordinates: [req.body.lat, req.body.lng],
@@ -243,6 +153,20 @@ exports.addOrder = async (req, reply) => {
           });
 
           let rs = await Orders.save();
+          // send notification for all users with same category if online
+          // send notification within 5km if onfield
+          // users depend on category and type 
+
+          var target = await Users.find({$and:[{isBlock:false}, {isVerify:true}, {app_type:'provider'}, {register_type: req.body.target}]})
+          console.log(target)
+          for await(const item of target){
+            var title = " طلب جديد"
+            var msg = "لديك طلب جديد يرجى تقديم العرض الان"
+            if(item.categories.includes(req.body.category)){
+              await CreateGeneralNotification(item.fcmToken,title, msg, NOTIFICATION_TYPE.ORDERS, rs._id, userId, item._id,"","");
+            }
+          }
+
           reply
           .code(200)
           .send(
@@ -730,83 +654,139 @@ exports.getUserOrder = async (req, reply) => {
     var limit = parseFloat(req.query.limit, 10);
     
     var query = {
-      $and: [ {user: userId}]
+      $and: [{$or: [{user: userId},{provider: userId}]}]
     };
 
-    if (req.query.status && req.query.status != "" && req.query.status === ORDER_STATUS.new) {
-      query.$and.push({ status: {$in:[ORDER_STATUS.new ]}})
+    if (req.query.status && req.query.status != "" && req.query.status == 'current') {
+      query.$and.push({ status: {$in:[ORDER_STATUS.new, ORDER_STATUS.progress, ORDER_STATUS.started, ORDER_STATUS.accpeted ]}})
     }
-    if (req.query.status && req.query.status != "" && req.query.status === ORDER_STATUS.started) {
-      query.$and.push({ status: {$in:[ORDER_STATUS.progress, ORDER_STATUS.started, ORDER_STATUS.accpeted, ORDER_STATUS.updated ]}})
+    if (req.query.status && req.query.status != "" && req.query.status == ORDER_STATUS.finished) {
+      query.$and.push({ status: {$in:[ORDER_STATUS.finished, ORDER_STATUS.rated, ORDER_STATUS.prefinished, ORDER_STATUS.canceled_by_admin, ORDER_STATUS.canceled_by_driver, ORDER_STATUS.canceled_by_user ]}})
     }
-    if (req.query.status && req.query.status != "" && req.query.status === ORDER_STATUS.finished) {
-      query.$and.push({ status: {$in:[ORDER_STATUS.finished, ORDER_STATUS.rated, ORDER_STATUS.prefinished ]}})
+    if(req.query.order_type && req.query.order_type != ""){
+      query.$and.push({ order_type: req.query.order_type})
     }
-    if (req.query.status && req.query.status != "" && req.query.status.includes(ORDER_STATUS.canceled)) {
-      query.$and.push({ status:{$in:[ORDER_STATUS.canceled_by_admin, ORDER_STATUS.canceled_by_driver, ORDER_STATUS.canceled_by_user]} })
+    if(req.query.offer_type && req.query.offer_type != ""){
+      query.$and.push({ offer_type: req.query.offer_type})
     }
-    
+    if(req.query.target && req.query.target != ""){
+      query.$and.push({ target: req.query.target})
+    }
+    if(req.query.category && req.query.category != ""){
+      query.$and.push({ category: req.query.category})
+    }
+    if(req.query.rate && req.query.rate != ""){
+      query.$and.push({ rate: {$gte: req.query.rate}})
+    }
+
     var arr = []
-    const total = await Order.find(query).countDocuments();
+    const total = await Order.countDocuments(query);
     const item = await Order.find(query)
-    .populate("user", "-token")
-    .populate({ path: "extra", populate: { path: "subcategory" } })
-    .populate("employee", "-token")
-    .populate("supervisor", "-token")
-    .populate("provider")
-    .populate("sub_category_id")
-    .populate("category_id")
-    .populate("address")
+    .populate({
+      path: "user",
+      populate: {
+        path: "categories",
+      },
+    })
+    .populate({
+      path: "user",
+      populate: {
+        path: "country",
+      },
+    })
+    .populate({
+      path: "provider",
+      populate: {
+        path: "categories",
+      },
+    })
+    .populate({
+      path: "provider",
+      populate: {
+        path: "country",
+      },
+    })
+    .populate("category")
       .skip(page * limit)
       .limit(limit)
       .sort({ createAt: -1 });
 
-      var items = []
+    var items = []
     item.forEach(element => {
       var arr = []
       var obj = element.toObject();
-      delete obj.sub_category_id;
-      delete obj.category_id;
-      delete obj.extra;
-      obj.sub_category_id = {
-        _id: element.sub_category_id._id,
-        title: element.sub_category_id[`${language}Name`],
-        description: element.sub_category_id[`${language}Description`],
-        price: element.sub_category_id.price,
-        image: element.sub_category_id.image
+      delete obj.category;
+      obj.category = {
+        _id: element.category._id,
+        title: element.category[`${language}Name`],
+        description: element.category[`${language}Description`],
       }
-      obj.category_id = {
-        _id: element.category_id._id,
-        title: element.category_id[`${language}Name`],
-        description: element.category_id[`${language}Description`],
-        image: element.category_id.image
-      }
-      element.extra.forEach(_element => {
-        var _obj = {
-          _id: _element._id,
-          title: _element[`${language}Name`],
-          price: _element.price
+
+      var subs = []
+      var country = null
+      if(obj.user.country){
+        country = {
+          _id: obj.user.country._id,
+          title: obj.user.country[`${language}Name`],
         }
-        arr.push(_obj)
-      });
-      obj.extra = arr;
+      }
+      if(obj.user.categories){
+        obj.user.categories.forEach(_newObject => {
+          var obj = {
+            _id: _newObject._id,
+            title: _newObject[`${language}Name`],
+            description: _newObject[`${language}Description`],
+          };
+          subs.push(obj)
+        });
+      }
+      
+      obj.user.country = country
+      obj.user.categories = subs
+
+      var subs2 = []
+      var country2 = null
+      if(obj.provider.country){
+        country2 = {
+          _id: obj.provider.country._id,
+          title: obj.provider.country[`${language}Name`],
+        }
+      }
+      if(obj.provider.categories){
+        obj.provider.categories.forEach(_newObject => {
+          var obj = {
+            _id: _newObject._id,
+            title: _newObject[`${language}Name`],
+            description: _newObject[`${language}Description`],
+          };
+          subs2.push(obj)
+        });
+      }
+      
+      obj.provider.country = country2
+      obj.provider.categories = subs2
+
       items.push(obj);
     });
     
-    const response = {
-      items: items,
-      status_code: 200,
-      message: "تمت العملية بنجاح",
-      messageAr: "تمت العملية بنجاح",
-      messageEn: "Done Successfully",
-      pagenation: {
-        size: item.length,
-        totalElements: total,
-        totalPages: Math.floor(total / limit),
-        pageNumber: page,
-      },
-    };
-    reply.send(response);
+    
+    reply
+    .code(200)
+    .send(
+      success(
+        language,
+        200,
+        MESSAGE_STRING_ARABIC.SUCCESS,
+        MESSAGE_STRING_ENGLISH.SUCCESS,
+        items,
+        {
+          size: item.length,
+          totalElements: total,
+          totalPages: Math.floor(total / limit),
+          pageNumber: page,
+        },
+      )
+    );
   } catch {
     throw boom.boomify();
   }
@@ -865,13 +845,31 @@ exports.getOrderDetails = async (req, reply) => {
     }
       
     var item = await Order.findById(req.params.id)
-    .populate("user", "-token")
-    .populate({ path: "extra", populate: { path: "subcategory" } })
-    .populate("employee", "-token")
-    .populate("provider")
-    .populate("sub_category_id")
-    .populate("category_id")
-    .populate("address")
+    .populate({
+      path: "user",
+      populate: {
+        path: "categories",
+      },
+    })
+    .populate({
+      path: "user",
+      populate: {
+        path: "country",
+      },
+    })
+    .populate({
+      path: "provider",
+      populate: {
+        path: "categories",
+      },
+    })
+    .populate({
+      path: "provider",
+      populate: {
+        path: "country",
+      },
+    })
+    .populate("category")
     .lean();
     if (!item) {
       reply
@@ -888,26 +886,54 @@ exports.getOrderDetails = async (req, reply) => {
     }
     var obj = item;
     var arr = []
-    var subCategoryObj = {
-      _id: obj.sub_category_id._id,
-      title: obj.sub_category_id[`${language}Name`],
-      price: obj.price
+    obj.category = {
+      _id: obj.category._id,
+      title: obj.category[`${language}Name`],
+      description: obj.category[`${language}Description`],
     }
-    var categoryObj = {
-      _id: obj.category_id._id,
-      title: obj.category_id[`${language}Name`],
-    }
-    obj.extra.forEach(element => {
-      var _obj = {
-        _id: element._id,
-        title: element[`${language}Name`],
-        price: element.price
+
+    var subs = []
+    var country = null
+    var subs2 = []
+    var country2 = null
+    if(obj.user.country){
+      country = {
+        _id: obj.user.country._id,
+        title: obj.user.country[`${language}Name`],
       }
-      arr.push(_obj)
-    });
-    obj.sub_category_id = subCategoryObj
-    obj.category_id = categoryObj
-    obj.extra = arr
+    }
+    if(obj.user.categories){
+      obj.user.categories.forEach(_newObject => {
+        var obj = {
+          _id: _newObject._id,
+          title: _newObject[`${language}Name`],
+          description: _newObject[`${language}Description`],
+        };
+        subs.push(obj)
+      });
+    }
+    if(obj.provider.country){
+      country2 = {
+        _id: obj.provider.country._id,
+        title: obj.provider.country[`${language}Name`],
+      }
+    }
+    if(obj.provider.categories){
+      obj.provider.categories.forEach(_newObject => {
+        var obj = {
+          _id: _newObject._id,
+          title: _newObject[`${language}Name`],
+          description: _newObject[`${language}Description`],
+        };
+        subs2.push(obj)
+      });
+    }
+    
+    obj.user.country = country
+    obj.user.categories = subs
+    obj.provider.country = country2
+    obj.provider.categories = subs2
+    // obj.category = categoryObj
 
     reply
       .code(200)
