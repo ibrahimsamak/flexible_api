@@ -1194,9 +1194,21 @@ const mobile_routes = [
   },
   {
     method: "POST",
-    url: "/api/mobile/order/rate/:id",
+    url: "/api/mobile/order/rate_employee/:id",
     beforeHandler: [auth.getToken],
     handler: orderController.addRateFromUserToEmployee,
+  },
+  {
+    method: "POST",
+    url: "/api/mobile/order/rate_user/:id",
+    beforeHandler: [auth.getToken],
+    handler: orderController.addRateEmployeeToUser,
+  },
+  {
+    method: "GET",
+    url: "/api/mobile/order/rate",
+    beforeHandler: [auth.getToken],
+    handler: orderController.getRates,
   },
   {
     method: "GET",

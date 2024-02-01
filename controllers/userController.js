@@ -599,16 +599,22 @@ exports.updateProfile = async (req, reply) => {
           }
         );
 
-        let img = "";
-        await uploadImages(files.image.name).then((x) => {
-          img = x;
-        });
+        // let img = "";
+        // await uploadImages(files.image.name).then((x) => {
+        //   img = x;
+        // });
         
-        let id_img = "";
-        await uploadImages(files.id_image.name).then((x) => {
-          id_img = x;
-        });
+        // let id_img = "";
+        // await uploadImages(files.id_image.name).then((x) => {
+        //   id_img = x;
+        // });
 
+        if(files.image && files.image != undefined){
+          await utils.processImages(files.image.data,files.image.name).then((x) => { img = x });
+        }
+        if(files.id_image && files.id_image != undefined){
+          await utils.processImages(files.id_image.data,files.id_image.name).then((x) => { id_img = x });
+        }
         const _newUser = await Users.findByIdAndUpdate(
           req.user._id,
           {
@@ -652,10 +658,8 @@ exports.updateProfile = async (req, reply) => {
             subs.push(obj)
           });
         }
-        
         newUser.country = country
         newUser.categories = subs
-
         reply
           .code(200)
           .send(

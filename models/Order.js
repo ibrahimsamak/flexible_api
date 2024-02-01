@@ -27,7 +27,11 @@ const Orderschema = mongoose.Schema(
     couponCode: { type: String },
     paymentType: { type: String },
     category: { type: mongoose.Schema.Types.ObjectId, ref: "category"},
-    offers:{type:[ {type: mongoose.Schema.Types.ObjectId, ref: "offer"} ]},
+    offers:{type:[ {
+      user: {type: mongoose.Schema.Types.ObjectId, ref: "Users"},
+      price: { type: Number, default: 0 },
+     }
+    ]},
     user: { type: mongoose.Schema.Types.ObjectId, ref: "Users" },
     provider: { type: mongoose.Schema.Types.ObjectId, ref: "Users" },
     notes: { type: String, default:"" },
@@ -45,7 +49,7 @@ const Orderschema = mongoose.Schema(
 const RateSchema = mongoose.Schema(
   {
     order_id: { type: mongoose.Schema.Types.ObjectId, ref: "Order" },
-    driver_id: { type: mongoose.Schema.Types.ObjectId, ref: "employees" },
+    provider_id: { type: mongoose.Schema.Types.ObjectId, ref: "Users" },
     user_id: { type: mongoose.Schema.Types.ObjectId, ref: "Users" },
     rate_from_user: { type: Number },
     note_from_user: { type: String },
