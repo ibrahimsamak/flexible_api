@@ -1075,10 +1075,10 @@ exports.getRates = async (req, reply) => {
     var page = parseFloat(req.query.page, 10);
     var limit = parseFloat(req.query.limit, 10);
     var type = 0;
-    if(req.query.target == 'employee'){
+    if(req.query.target == 'provider'){
       type = 1
     }
-    if(req.query.target == 'provider'){
+    if(req.query.target == 'customer'){
       type = 2
     }
     const total = await Rate.countDocuments({ $and:[{provider_id: req.query.target_id}, {type: type}] }).countDocuments();
