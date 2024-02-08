@@ -79,8 +79,8 @@ exports.addOrder = async (req, reply) => {
       var total_tax = 0
       
       var validationArray = [
-        { name: "couponCode" },
-        { name: "paymentType" },
+        // { name: "couponCode" },
+        // { name: "paymentType" },
         { name: "category" }
       ];
 
@@ -162,7 +162,7 @@ exports.addOrder = async (req, reply) => {
           for await(const item of target){
             var title = " طلب جديد"
             var msg = "لديك طلب جديد يرجى تقديم العرض الان"
-            if(item.categories.includes(req.body.category)){
+            if(item.categories && item.categories.kength > 0 && item.categories.includes(req.body.category)){
               await CreateGeneralNotification(item.fcmToken,title, msg, NOTIFICATION_TYPE.ORDERS, rs._id, userId, item._id,"","");
             }
           }
@@ -557,7 +557,7 @@ exports.getUserOrder = async (req, reply) => {
     if (req.query.status && req.query.status != "" && req.query.status == 'all') {
       //var user = await Users.findById(userId)
       query.$and = []
-      query.$and.push({ status: {$in:[ORDER_STATUS.new, ORDER_STATUS.progress, ORDER_STATUS.started, ORDER_STATUS.accpeted ]}})
+      query.$and.push({ status: {$in:[ORDER_STATUS.new ]}})
     }
     if(req.query.order_type && req.query.order_type != ""){
       query.$and.push({ order_type: req.query.order_type})
