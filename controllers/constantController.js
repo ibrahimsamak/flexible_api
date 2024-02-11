@@ -2490,7 +2490,6 @@ exports.checkCurrentPlace = async (req, reply) => {
   const language = req.headers["accept-language"];
   try {
     //for test 24.693601, 46.66594
-
     var PoinInPolygon = await place.find({
       $and: [
         {
@@ -2498,7 +2497,7 @@ exports.checkCurrentPlace = async (req, reply) => {
             $geoIntersects: {
               $geometry: {
                 type: "Point",
-                coordinates: [Number(req.body.lng), Number(req.body.lat)],
+                coordinates: [Number(req.body.lat), Number(req.body.lng)],
               },
             },
           },

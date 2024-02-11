@@ -236,6 +236,10 @@ exports.addUsers = async (req, reply) => {
             os: req.body.os,
             lat: parseFloat(req.body.lat),
             lng: parseFloat(req.body.lng),
+            loc: {
+              type: "Point",
+              coordinates: [Number(req.body.lat), Number(req.body.lng)],
+            },
             token: jwt.sign(
               { _id: _user._id, userType: USER_TYPE.USER },
               config.get("jwtPrivateKey"),
@@ -312,7 +316,7 @@ exports.addUsers = async (req, reply) => {
         app_type: req.body.app_type,
         loc: {
           type: "Point",
-          coordinates: [req.body.lat, req.body.lng],
+          coordinates: [Number(req.body.lat), Number(req.body.lng)],
         },        
       });
       let rs = await user.save();
@@ -634,7 +638,7 @@ exports.updateProfile = async (req, reply) => {
             categories:  req.raw.body.categories,
             loc:  {
               type: "Point",
-              coordinates: [req.raw.body.lat, req.raw.body.lng],
+              coordinates: [Number(req.raw.body.lat), Number(req.raw.body.lng)],
             },   
           },
           { new: true }
@@ -690,7 +694,7 @@ exports.updateProfile = async (req, reply) => {
             categories:  req.raw.body.categories,
             loc:  {
               type: "Point",
-              coordinates: [req.raw.body.lat, req.raw.body.lng],
+              coordinates: [Number(req.raw.body.lat), Number(req.raw.body.lng)],
             },   
           },
           { new: true }

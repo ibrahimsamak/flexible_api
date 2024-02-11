@@ -148,7 +148,7 @@ exports.addOrder = async (req, reply) => {
             offers:[],
             loc: {
               type: "Point",
-              coordinates: [req.body.lat, req.body.lng],
+              coordinates: [Number(req.body.lat), Number(req.body.lng)],
             },
           });
 
