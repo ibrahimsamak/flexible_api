@@ -541,10 +541,10 @@ exports.updateProfile = async (req, reply) => {
   const language = req.headers["accept-language"];
   // try {
     if (
-      !req.raw.body.email ||
-      !req.raw.body.full_name ||
-      !req.raw.body.lat ||
-      !req.raw.body.lng
+      !req.body.email ||
+      !req.body.full_name ||
+      !req.body.lat ||
+      !req.body.lng
     ) {
       reply
         .code(200)
@@ -563,7 +563,7 @@ exports.updateProfile = async (req, reply) => {
       $and: [
         { _id: { $ne: req.user._id } },
         {
-          $or: [{ email: String(req.raw.body.email).toLowerCase() }],
+          $or: [{ email: String(req.body.email).toLowerCase() }],
         },
       ],
     });
@@ -580,65 +580,26 @@ exports.updateProfile = async (req, reply) => {
         );
       return;
     } else {
-      if (req.raw.files) {
-        const files = req.raw.files;
-        let fileArr = [];
-        for (let key in files) {
-          fileArr.push({
-            name: files[key].name,
-            mimetype: files[key].mimetype,
-          });
-        }
-        var data = Buffer.from(files.image.data);
-        fs.writeFile(
-          "./uploads/" + files.image.name,
-          data,
-          "binary",
-          function (err) {
-            if (err) {
-              console.log("There was an error writing the image");
-            } else {
-              console.log("The sheel file was written");
-            }
-          }
-        );
-
-        // let img = "";
-        // await uploadImages(files.image.name).then((x) => {
-        //   img = x;
-        // });
-        
-        // let id_img = "";
-        // await uploadImages(files.id_image.name).then((x) => {
-        //   id_img = x;
-        // });
-
-        if(files.image && files.image != undefined){
-          await utils.processImages(files.image.data,files.image.name).then((x) => { img = x });
-        }
-        if(files.id_image && files.id_image != undefined){
-          await utils.processImages(files.id_image.data,files.id_image.name).then((x) => { id_img = x });
-        }
         const _newUser = await Users.findByIdAndUpdate(
           req.user._id,
           {
-            image: img,
-            id_image: id_img,
-            email: String(req.raw.body.email).toLowerCase(),
-            full_name: req.raw.body.full_name,
-            bio: req.raw.body.bio,
-            reg_no: req.raw.body.reg_no,
-            address: req.raw.body.address,
-            country: req.raw.body.country,
-            city: req.raw.body.city,
-            dob:  req.raw.body.dob,
-            bio:  req.raw.body.bio,
-            lat:  req.raw.body.lat,
-            lng:  req.raw.body.lng,
-            categories:  req.raw.body.categories,
+            image: req.body.image,
+            id_image: req.body.id_img,
+            email: String(req.body.email).toLowerCase(),
+            full_name: req.body.full_name,
+            bio: req.body.bio,
+            reg_no: req.body.reg_no,
+            address: req.body.address,
+            country: req.body.country,
+            city: req.body.city,
+            dob:  req.body.dob,
+            bio:  req.body.bio,
+            lat:  req.body.lat,
+            lng:  req.body.lng,
+            categories:  req.body.categories,
             loc:  {
               type: "Point",
-              coordinates: [Number(req.raw.body.lat), Number(req.raw.body.lng)],
+              coordinates: [Number(req.body.lat), Number(req.body.lng)],
             },   
           },
           { new: true }
@@ -676,63 +637,7 @@ exports.updateProfile = async (req, reply) => {
             )
           );
         return;
-      } else {
-        const _newUser = await Users.findByIdAndUpdate(
-          req.user._id,
-          {
-            email: String(req.raw.body.email).toLowerCase(),
-            full_name: req.raw.body.full_name,
-            bio: req.raw.body.bio,
-            reg_no: req.raw.body.reg_no,
-            address: req.raw.body.address,
-            country: req.raw.body.country,
-            city: req.raw.body.city,
-            dob:  req.raw.body.dob,
-            bio:  req.raw.body.bio,
-            lat:  req.raw.body.lat,
-            lng:  req.raw.body.lng,
-            categories:  req.raw.body.categories,
-            loc:  {
-              type: "Point",
-              coordinates: [Number(req.raw.body.lat), Number(req.raw.body.lng)],
-            },   
-          },
-          { new: true }
-        ).select();
-        var newUser = _newUser.toObject();
-        var subs = []
-        var country = null
-        if(newUser.country){
-          country = {
-            _id: newUser.country._id,
-            title: newUser.country[`${language}Name`],
-          }
-        }
-        if(newUser.categories){
-          newUser.categories.forEach(_newObject => {
-            var obj = {
-              _id: _newObject._id,
-              title: _newObject[`${language}Name`],
-              description: _newObject[`${language}Description`],
-            };
-            subs.push(obj)
-          });
-        }  
-        newUser.country = country
-        newUser.categories = subs
-        reply
-          .code(200)
-          .send(
-            success(
-              language,
-              200,
-              MESSAGE_STRING_ARABIC.SUCCESS,
-              MESSAGE_STRING_ENGLISH.SUCCESS,
-              newUser
-            )
-          );
-        return;
-      }
+   
     }
   // } catch (err) {
   //   reply.code(200).send(errorAPI(language, 400, err.message, err.message));
