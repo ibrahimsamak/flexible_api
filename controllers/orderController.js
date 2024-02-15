@@ -537,7 +537,7 @@ exports.updateOrderCode = async (req, reply) => {
 
 
 exports.getUserOrder = async (req, reply) => {
-  try {
+  // try {
     let language = "ar";
     const userId = req.user._id;
 
@@ -605,9 +605,9 @@ exports.getUserOrder = async (req, reply) => {
     })
     .populate("category")
     .populate({ path: "offers.user", populate: { path: "user" } })
-      .skip(page * limit)
-      .limit(limit)
-      .sort({ createAt: -1 });
+    .skip(page * limit)
+    .limit(limit)
+    .sort({ createAt: -1 });
 
     var items = []
     item.forEach(element => {
@@ -622,13 +622,13 @@ exports.getUserOrder = async (req, reply) => {
 
       var subs = []
       var country = null
-      if(obj.user.country){
+      if(obj.user && obj.user.country){
         country = {
           _id: obj.user.country._id,
           title: obj.user.country[`${language}Name`],
         }
       }
-      if(obj.user.categories){
+      if(obj.user && obj.user.categories){
         obj.user.categories.forEach(_newObject => {
           var obj = {
             _id: _newObject._id,
@@ -639,18 +639,21 @@ exports.getUserOrder = async (req, reply) => {
         });
       }
       
-      obj.user.country = country
-      obj.user.categories = subs
+      if(obj.user){
+        obj.user.country = country
+        obj.user.categories = subs
+      }
+
 
       var subs2 = []
       var country2 = null
-      if(obj.provider.country){
+      if(obj.provider && obj.provider.country){
         country2 = {
           _id: obj.provider.country._id,
           title: obj.provider.country[`${language}Name`],
         }
       }
-      if(obj.provider.categories){
+      if(obj.provider&& obj.provider.categories){
         obj.provider.categories.forEach(_newObject => {
           var obj = {
             _id: _newObject._id,
@@ -661,8 +664,10 @@ exports.getUserOrder = async (req, reply) => {
         });
       }
       
-      obj.provider.country = country2
-      obj.provider.categories = subs2
+      if(obj.provider){
+        obj.provider.country = country2
+        obj.provider.categories = subs2
+      }
 
       items.push(obj);
     });
@@ -685,9 +690,9 @@ exports.getUserOrder = async (req, reply) => {
         },
       )
     );
-  } catch {
-    throw boom.boomify();
-  }
+  // } catch {
+  //   throw boom.boomify();
+  // }
 };
 
 exports.getOrderTotal = async (req, reply) => {
@@ -795,13 +800,13 @@ exports.getOrderDetails = async (req, reply) => {
     var country = null
     var subs2 = []
     var country2 = null
-    if(obj.user.country){
+    if(obj.user && obj.user.country){
       country = {
         _id: obj.user.country._id,
         title: obj.user.country[`${language}Name`],
       }
     }
-    if(obj.user.categories){
+    if(obj.user && obj.user.categories){
       obj.user.categories.forEach(_newObject => {
         var obj = {
           _id: _newObject._id,
@@ -811,13 +816,13 @@ exports.getOrderDetails = async (req, reply) => {
         subs.push(obj)
       });
     }
-    if(obj.provider.country){
+    if(obj.provider && obj.provider.country){
       country2 = {
         _id: obj.provider.country._id,
         title: obj.provider.country[`${language}Name`],
       }
     }
-    if(obj.provider.categories){
+    if(obj.provider && obj.provider.categories){
       obj.provider.categories.forEach(_newObject => {
         var obj = {
           _id: _newObject._id,
@@ -828,10 +833,15 @@ exports.getOrderDetails = async (req, reply) => {
       });
     }
     
-    obj.user.country = country
-    obj.user.categories = subs
-    obj.provider.country = country2
-    obj.provider.categories = subs2
+    if(obj.user){
+      obj.user.country = country
+      obj.user.categories = subs
+    }
+
+    if(obj.provider){
+      obj.provider.country = country2
+      obj.provider.categories = subs2
+    }
     // obj.category = categoryObj
 
     reply
