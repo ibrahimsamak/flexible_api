@@ -130,6 +130,7 @@ exports.getSingleUsers = async (req, reply) => {
     const user_id = req.user._id;
     const _Users = await Users.findById(user_id)
     .populate("categories")
+    .populate("work")
     .populate("country")
     .select();
     var newUser = _Users.toObject();
@@ -139,6 +140,13 @@ exports.getSingleUsers = async (req, reply) => {
       country = {
         _id: newUser.country._id,
         title: newUser.country[`${language}Name`],
+      }
+    }
+    if(newUser.work){
+      work = {
+        _id: newUser.work._id,
+        title: newUser.work[`${language}Name`],
+        description: newUser.work[`${language}Description`],
       }
     }
     if(_Users.categories){
@@ -154,6 +162,7 @@ exports.getSingleUsers = async (req, reply) => {
     
     newUser.country = country
     newUser.categories = subs
+    newUser.work = work
     reply
       .code(200)
       .send(
@@ -251,16 +260,26 @@ exports.addUsers = async (req, reply) => {
           { new: true }
         )
         .populate("categories")
+        .populate("work")
         .populate("country");
+
         let msg = "مرحبا بكم في تطبيق جاز توك رمز التفعيل هو: " + verify_code;
         sendSMS(req.body.phone_number, "", "", msg);
         var newUser = rs.toObject();
         var subs = []
         var country = null
+        var work = null
         if(newUser.country){
           country = {
             _id: newUser.country._id,
             title: newUser.country[`${language}Name`],
+          }
+        }
+        if(newUser.work){
+          work = {
+            _id: newUser.work._id,
+            title: newUser.work[`${language}Name`],
+            description: newUser.work[`${language}Description`],
           }
         }
         if(newUser.categories){
@@ -276,6 +295,7 @@ exports.addUsers = async (req, reply) => {
         
         newUser.country = country
         newUser.categories = subs
+        newUser.work = work
         reply
           .code(200)
           .send(
@@ -398,14 +418,23 @@ exports.verify = async (req, reply) => {
         { new: true }
       )
       .populate('categories')
+      .populate("work")
       .populate('country');
       var newUser = update.toObject();
       var subs = []
       var country = null
+      var work = null
       if(newUser.country){
         country = {
           _id: newUser.country._id,
           title: newUser.country[`${language}Name`],
+        }
+      }
+      if(newUser.work){
+        work = {
+          _id: newUser.work._id,
+          title: newUser.work[`${language}Name`],
+          description: newUser.work[`${language}Description`],
         }
       }
       if(newUser.categories){
@@ -421,6 +450,7 @@ exports.verify = async (req, reply) => {
       
       newUser.country = country
       newUser.categories = subs
+      newUser.work = work
       var orderNo = `#${utils.makeid(6)}`;
       const settings = await setting.findOne({code:"WALLET_REFERAL"});
       await NewPayment(update._id, orderNo, "دعوة من احد الأصدقاء", "+" , Number(settings.value), "Online")
@@ -597,20 +627,33 @@ exports.updateProfile = async (req, reply) => {
             lat:  req.body.lat,
             lng:  req.body.lng,
             categories:  req.body.categories,
+            work:  req.body.work ? req.body.work : null,
             loc:  {
               type: "Point",
               coordinates: [Number(req.body.lat), Number(req.body.lng)],
             },   
           },
           { new: true }
-        ).select();
+        )
+        .populate("categories")
+        .populate("country")
+        .populate("work")
+        .select();
         var newUser = _newUser.toObject();
         var subs = []
         var country = null
+        var work = null
         if(newUser.country){
           country = {
             _id: newUser.country._id,
             title: newUser.country[`${language}Name`],
+          }
+        }
+        if(newUser.work){
+          work = {
+            _id: newUser.work._id,
+            title: newUser.work[`${language}Name`],
+            description: newUser.work[`${language}Description`],
           }
         }
         if(newUser.categories){
@@ -625,6 +668,8 @@ exports.updateProfile = async (req, reply) => {
         }
         newUser.country = country
         newUser.categories = subs
+        newUser.work = work
+
         reply
           .code(200)
           .send(

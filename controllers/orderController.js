@@ -592,6 +592,12 @@ exports.getUserOrder = async (req, reply) => {
       },
     })
     .populate({
+      path: "user",
+      populate: {
+        path: "work",
+      },
+    })
+    .populate({
       path: "provider",
       populate: {
         path: "categories",
@@ -603,15 +609,30 @@ exports.getUserOrder = async (req, reply) => {
         path: "country",
       },
     })
+    .populate({
+      path: "provider",
+      populate: {
+        path: "work",
+      },
+    })
     .populate("category")
-    .populate({ path: "offers.user", populate: { path: "user" } })
+    // .populate({ path: "offers.user", populate: { path: "user" } })
     .skip(page * limit)
     .limit(limit)
     .sort({ createAt: -1 });
 
     var items = []
-    item.forEach(element => {
+    for await (const element of item){
       var arr = []
+      var offers = []
+      var subs = []
+      var country = null
+      var work = null
+      var subs2 = []
+      var country2 = null
+      var work2 = null
+      var offers = []
+
       var obj = element.toObject();
       delete obj.category;
       obj.category = {
@@ -620,8 +641,7 @@ exports.getUserOrder = async (req, reply) => {
         description: element.category[`${language}Description`],
       }
 
-      var subs = []
-      var country = null
+
       if(obj.user && obj.user.country){
         country = {
           _id: obj.user.country._id,
@@ -638,19 +658,28 @@ exports.getUserOrder = async (req, reply) => {
           subs.push(obj)
         });
       }
-      
+      if(obj.user && obj.user.work){
+        work = {
+          _id: obj.user.work._id,
+          title: obj.user.work[`${language}Name`],
+        }
+      }
       if(obj.user){
         obj.user.country = country
         obj.user.categories = subs
+        obj.user.work = work
       }
 
-
-      var subs2 = []
-      var country2 = null
       if(obj.provider && obj.provider.country){
         country2 = {
           _id: obj.provider.country._id,
           title: obj.provider.country[`${language}Name`],
+        }
+      }
+      if(obj.provider && obj.provider.work){
+        work2 = {
+          _id: obj.provider.work._id,
+          title: obj.provider.work[`${language}Name`],
         }
       }
       if(obj.provider&& obj.provider.categories){
@@ -667,10 +696,57 @@ exports.getUserOrder = async (req, reply) => {
       if(obj.provider){
         obj.provider.country = country2
         obj.provider.categories = subs2
+        obj.provider.work = work2
       }
 
+      for await(const i of obj.offers){
+        var _user = await Users.findById(i.user)
+        .populate("categories")
+        .populate("country")
+        .populate("work")
+  
+        var _newUser = _user.toObject();
+        var subs = []
+        var country = null
+        var work = null
+        if(_newUser.country){
+          country = {
+            _id: _newUser.country._id,
+            title: _newUser.country[`${language}Name`],
+          }
+        }
+        if(_newUser.work){
+          work = {
+            _id: _newUser.work._id,
+            title: _newUser.work[`${language}Name`],
+            description: _newUser.work[`${language}Description`],
+          }
+        }
+        if(_newUser.categories){
+          _newUser.categories.forEach(_newObject => {
+            var obj = {
+              _id: _newObject._id,
+              title: _newObject[`${language}Name`],
+              description: _newObject[`${language}Description`],
+            };
+            subs.push(obj)
+          });
+        }
+        _newUser.country = country
+        _newUser.categories = subs
+        _newUser.work = work
+  
+        var _obj = {
+          _id:i._id,
+          user: _newUser,
+          price: i.price
+        }
+        offers.push(_obj);
+      }
+
+      obj.offers = offers
       items.push(obj);
-    });
+    };
     
     
     reply
@@ -738,14 +814,14 @@ exports.getOrderTotal = async (req, reply) => {
 
 exports.getOrderDetails = async (req, reply) => {
   const language = req.headers["accept-language"];
-  try {
-    var rate = await Rate.findOne({
-      $and: [{ order_id: req.params.id }, { type: 1 }],
-    });
+  // try {
+    // var rate = await Rate.findOne({
+    //   $and: [{ order_id: req.params.id }, { type: 1 }],
+    // });
 
-    if (rate) {
-      isRate = true;
-    }
+    // if (rate) {
+    //   isRate = true;
+    // }
       
     var item = await Order.findById(req.params.id)
     .populate({
@@ -761,6 +837,12 @@ exports.getOrderDetails = async (req, reply) => {
       },
     })
     .populate({
+      path: "user",
+      populate: {
+        path: "work",
+      },
+    })
+    .populate({
       path: "provider",
       populate: {
         path: "categories",
@@ -772,9 +854,16 @@ exports.getOrderDetails = async (req, reply) => {
         path: "country",
       },
     })
+    .populate({
+      path: "provider",
+      populate: {
+        path: "work",
+      },
+    })
     .populate("category")
-    .populate({ path: "offers.user", populate: { path: "user" } })
+    // .populate({ path: "offers.user", populate: { path: "user" } })
     .lean();
+
     if (!item) {
       reply
         .code(200)
@@ -790,20 +879,28 @@ exports.getOrderDetails = async (req, reply) => {
     }
     var obj = item;
     var arr = []
+    var subs = []
+    var country = null
+    var work = null
+    var subs2 = []
+    var country2 = null
+    var work2 = null
+    var offers = []
     obj.category = {
       _id: obj.category._id,
       title: obj.category[`${language}Name`],
       description: obj.category[`${language}Description`],
     }
-
-    var subs = []
-    var country = null
-    var subs2 = []
-    var country2 = null
     if(obj.user && obj.user.country){
       country = {
         _id: obj.user.country._id,
         title: obj.user.country[`${language}Name`],
+      }
+    }
+    if(obj.user && obj.user.work){
+      work = {
+        _id: obj.user.work._id,
+        title: obj.user.work[`${language}Name`],
       }
     }
     if(obj.user && obj.user.categories){
@@ -822,6 +919,12 @@ exports.getOrderDetails = async (req, reply) => {
         title: obj.provider.country[`${language}Name`],
       }
     }
+    if(obj.provider && obj.provider.work){
+      work2 = {
+        _id: obj.provider.work._id,
+        title: obj.provider.work[`${language}Name`],
+      }
+    }
     if(obj.provider && obj.provider.categories){
       obj.provider.categories.forEach(_newObject => {
         var obj = {
@@ -832,17 +935,63 @@ exports.getOrderDetails = async (req, reply) => {
         subs2.push(obj)
       });
     }
-    
+    for await(const i of obj.offers){
+      var _user = await Users.findById(i.user)
+      .populate("categories")
+      .populate("country")
+      .populate("work")
+
+      var _newUser = _user.toObject();
+      var subs = []
+      var country = null
+      var work = null
+      if(_newUser.country){
+        country = {
+          _id: _newUser.country._id,
+          title: _newUser.country[`${language}Name`],
+        }
+      }
+      if(_newUser.work){
+        work = {
+          _id: _newUser.work._id,
+          title: _newUser.work[`${language}Name`],
+          description: _newUser.work[`${language}Description`],
+        }
+      }
+      if(_newUser.categories){
+        _newUser.categories.forEach(_newObject => {
+          var obj = {
+            _id: _newObject._id,
+            title: _newObject[`${language}Name`],
+            description: _newObject[`${language}Description`],
+          };
+          subs.push(obj)
+        });
+      }
+      _newUser.country = country
+      _newUser.categories = subs
+      _newUser.work = work
+
+      var _obj = {
+        _id:i._id,
+        user: _newUser,
+        price: i.price
+      }
+      offers.push(_obj);
+    }
+
     if(obj.user){
       obj.user.country = country
       obj.user.categories = subs
+      obj.user.work = work
     }
-
     if(obj.provider){
       obj.provider.country = country2
       obj.provider.categories = subs2
+      obj.provider.work = work2
     }
-    // obj.category = categoryObj
+
+    obj.offers = offers
 
     reply
       .code(200)
@@ -856,10 +1005,10 @@ exports.getOrderDetails = async (req, reply) => {
         )
       );
     return;
-  } catch (err) {
-    reply.code(200).send(errorAPI(language, 400, err.message, err.message));
-    return;
-  }
+  // } catch (err) {
+  //   reply.code(200).send(errorAPI(language, 400, err.message, err.message));
+  //   return;
+  // }
 };
 
 exports.addRateFromUserToEmployee = async (req, reply) => {

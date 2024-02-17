@@ -95,6 +95,9 @@ const UserSchema = mongoose.Schema(
     country: {
       type: mongoose.Schema.Types.ObjectId, ref: "countries",
     },
+    work: {
+      type: mongoose.Schema.Types.ObjectId, ref: "co_type",
+    },
     categories:{type:[ {type: mongoose.Schema.Types.ObjectId, ref: "category"} ]},
     register_type:{
       type:String,
