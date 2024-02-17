@@ -29,7 +29,7 @@ const {
 } = require("../models/Constant");
 const { Users } = require("../models/User");
 const { employee } = require("../models/Employee");
-const { Place_Delivery, Supplier, Category, SubCategory } = require("../models/Product");
+const { Place_Delivery, Supplier, Category, SubCategory, Type } = require("../models/Product");
 const { mail_general } = require("../utils/utils");
 
 const { success, errorAPI } = require("../utils/responseApi");
@@ -117,7 +117,9 @@ exports.getAllCategoryAndSubCategory = async (req, reply) => {
  
 
     const cats = await Category.find({isDeleted: false}).sort({ sort: 1 });
+    const typs = await Type.find({isDeleted: false}).sort({ sort: 1 });
     var arr = [];
+    var arr2 = [];
     for await(const element of cats){
       var newObject = element.toObject();
       var subs = []
@@ -161,6 +163,20 @@ exports.getAllCategoryAndSubCategory = async (req, reply) => {
       arr.push(obj);
     }
 
+    for await(const element of typs){
+      var newObject = element.toObject();
+      var obj = {
+        _id: newObject._id,
+        title: newObject[`${language}Name`],
+        description: newObject[`${language}Description`],
+        image: newObject.image,
+      };
+      arr2.push(obj);
+    }
+    var obj = {
+      category: arr,
+      type: arr2
+    }
     reply
       .code(200)
       .send(
@@ -169,7 +185,7 @@ exports.getAllCategoryAndSubCategory = async (req, reply) => {
           200,
           MESSAGE_STRING_ARABIC.SUCCESS,
           MESSAGE_STRING_ENGLISH.SUCCESS,
-          arr
+          obj
         )
       );
 
@@ -3265,6 +3281,270 @@ exports.getCategory = async (req, reply) => {
 exports.getSingleCategory = async (req, reply) => {
   try {
     const _Category = await Category.findById(req.params.id).sort({ _id: -1 });
+    const response = {
+      status_code: 200,
+      status: true,
+      message: "تمت العملية بنجاح",
+      items: _Category,
+    };
+    reply.code(200).send(response);
+  } catch (err) {
+    throw boom.boomify(err);
+  }
+};
+
+
+exports.addType = async (req, reply) => {
+  try {
+    if (req.raw.files) {
+      const files = req.raw.files;
+      let fileArr = [];
+      for (let key in files) {
+        fileArr.push({
+          name: files[key].name,
+          mimetype: files[key].mimetype,
+        });
+      }
+      var data = Buffer.from(files.image.data);
+      fs.writeFile(
+        "./uploads/" + files.image.name,
+        data,
+        "binary",
+        function (err) {
+          if (err) {
+            console.log("There was an error writing the image");
+          } else {
+            console.log("The sheel file was written");
+          }
+        }
+      );
+
+      let img = "";
+      await uploadImages(files.image.name).then((x) => {
+        img = x;
+      });
+
+    let _Category = new Type({
+      arName: req.raw.body.arName,
+      enName: req.raw.body.enName,
+      enDescription: req.raw.body.enDescription,
+      arDescription: req.raw.body.arDescription,  
+      image: img,
+      isDeleted: false,
+      sort: req.raw.body.sort,
+    });
+    var _return = handleError(_Category.validateSync());
+    if (_return.length > 0) {
+      reply.code(200).send({
+        status_code: 400,
+        status: false,
+        message: _return[0],
+        items: _return,
+      });
+      return;
+    }
+    let rs = await _Category.save();
+    const response = {
+      status_code: 200,
+      status: true,
+      message: "تمت العملية بنجاح",
+      items: rs,
+    };
+    reply.code(200).send(response);
+    } else{
+      let _Category = new Type({
+        arName: req.raw.body.arName,
+        enName: req.raw.body.enName,
+        enDescription: req.raw.body.enDescription,
+        arDescription: req.raw.body.arDescription,  
+        // image: img,
+        isDeleted: false,
+        // sort: req.raw.body.sort,
+      });
+      var _return = handleError(_Category.validateSync());
+      if (_return.length > 0) {
+        reply.code(200).send({
+          status_code: 400,
+          status: false,
+          message: _return[0],
+          items: _return,
+        });
+        return;
+      }
+      let rs = await _Category.save();
+      const response = {
+        status_code: 200,
+        status: true,
+        message: "تمت العملية بنجاح",
+        items: rs,
+      };
+      reply.code(200).send(response);
+    }
+  }catch (err) {
+    throw boom.boomify(err);
+  }
+};
+
+exports.updateType = async (req, reply) => {
+  try {
+    if (req.raw.files) {
+      const files = req.raw.files;
+      let fileArr = [];
+      for (let key in files) {
+        fileArr.push({
+          name: files[key].name,
+          mimetype: files[key].mimetype,
+        });
+      }
+      var data = Buffer.from(files.image.data);
+      fs.writeFile(
+        "./uploads/" + files.image.name,
+        data,
+        "binary",
+        function (err) {
+          if (err) {
+            console.log("There was an error writing the image");
+          } else {
+            console.log("The sheel file was written");
+          }
+        }
+      );
+
+      let img = "";
+      await uploadImages(files.image.name).then((x) => {
+        img = x;
+      });
+      const _Category = await Type.findByIdAndUpdate(
+        req.params.id,
+        {
+          arName: req.raw.body.arName,
+          enName: req.raw.body.enName,
+          image: img,
+          enDescription: req.raw.body.enDescription,
+          arDescription: req.raw.body.arDescription,
+          sort: req.raw.body.sort,
+        },
+        { new: true, runValidators: true },
+        function (err, model) {
+          var _return = handleError(err);
+          if (_return.length > 0) {
+            reply.code(200).send({
+              status_code: 400,
+              status: false,
+              message: _return[0],
+              items: _return,
+            });
+            return;
+          }
+        }
+      );
+
+      const response = {
+        status_code: 200,
+        status: true,
+        message: "تمت العملية بنجاح",
+        items: _Category,
+      };
+      reply.code(200).send(response);
+   }else{
+    const _Category = await Type.findByIdAndUpdate(
+      req.params.id,
+      {
+        arName: req.raw.body.arName,
+        enName: req.raw.body.enName,
+        enDescription: req.raw.body.enDescription,
+        arDescription: req.raw.body.arDescription,
+        sort: req.raw.body.sort,
+      },
+      { new: true, runValidators: true },
+      function (err, model) {
+        var _return = handleError(err);
+        if (_return.length > 0) {
+          reply.code(200).send({
+            status_code: 400,
+            status: false,
+            message: _return[0],
+            items: _return,
+          });
+          return;
+        }
+      }
+    );
+
+    const response = {
+      status_code: 200,
+      status: true,
+      message: "تمت العملية بنجاح",
+      items: _Category,
+    };
+    reply.code(200).send(response);
+   }
+  } catch (err) {
+    throw boom.boomify(err);
+  }
+};
+
+exports.deleteType = async (req, reply) => {
+  try {
+    const previousCategory = await Type.findById(req.params.id);
+    const _Category = await Type.findByIdAndUpdate(
+      req.params.id,
+      { isDeleted: !previousCategory.isDeleted },
+      { new: true, runValidators: true },
+      function (err, model) {
+        var _return = handleError(err);
+        if (_return.length > 0) {
+          reply.code(200).send({
+            status_code: 400,
+            status: false,
+            message: _return[0],
+            items: _return,
+          });
+          return;
+        }
+      }
+    );
+
+    const response = {
+      status_code: 200,
+      status: true,
+      message: "تمت العملية بنجاح",
+      items: [],
+    };
+    reply.code(200).send(response);
+  } catch (err) {
+    throw boom.boomify(err);
+  }
+};
+
+exports.getType = async (req, reply) => {
+  try {
+    var arr = [];
+    const language = req.headers["accept-language"];
+    const _Category = await Type.find({ isDeleted: false }).sort({
+      sort: -1,
+    });
+
+    reply
+      .code(200)
+      .send(
+        success(
+          language,
+          200,
+          MESSAGE_STRING_ARABIC.SUCCESS,
+          MESSAGE_STRING_ENGLISH.SUCCESS,
+          _Category
+        )
+      );
+    return;
+  } catch (err) {
+    throw boom.boomify(err);
+  }
+};
+
+exports.getSingleType = async (req, reply) => {
+  try {
+    const _Category = await Type.findById(req.params.id).sort({ _id: -1 });
     const response = {
       status_code: 200,
       status: true,

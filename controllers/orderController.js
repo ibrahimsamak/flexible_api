@@ -545,7 +545,7 @@ exports.getUserOrder = async (req, reply) => {
     var limit = parseFloat(req.query.limit, 10);
 
     var query = {
-      $and: [{$or: [{user: userId},{provider: userId}]}]
+      $and: [{$or: [{user: userId},{ provider: userId }]}]
     };
 
     if (req.query.status && req.query.status != "" && req.query.status == 'current') {
@@ -557,7 +557,7 @@ exports.getUserOrder = async (req, reply) => {
     if (req.query.status && req.query.status != "" && req.query.status == 'all') {
       //var user = await Users.findById(userId)
       query.$and = []
-      query.$and.push({ status: {$in:[ORDER_STATUS.new ]}})
+      query.$and.push({ status: {$in:[ORDER_STATUS.new]}})
     }
     if(req.query.order_type && req.query.order_type != ""){
       query.$and.push({ order_type: req.query.order_type})

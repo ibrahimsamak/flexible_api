@@ -52,6 +52,7 @@ const schema = mongoose.Schema({
   },
 });
 
+
 const subschema = mongoose.Schema({
   arName: {
     type: String,
@@ -221,6 +222,7 @@ Productschema.index({ category_id: 1 });
 ProductPlacePriceSchema.index({ product_id: 1 });
 
 const Category = mongoose.model("category", schema);
+const Type = mongoose.model("co_type", schema);
 const SubCategory = mongoose.model("subcategory", subschema);
 const Supplier = mongoose.model("supplier", Supplierschema);
 const Supervisor = mongoose.model("supervisor", SupervisorSchema);
@@ -235,3 +237,4 @@ exports.Product = Product;
 exports.Product_Price = product_price;
 exports.Place_Delivery = Place_Delivery;
 exports.Supervisor = Supervisor;
+exports.Type = Type;

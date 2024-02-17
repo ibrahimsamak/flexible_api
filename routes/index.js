@@ -300,6 +300,36 @@ const admin_routes = [
     handler: constantController.deleteCategory,
   },
 
+  //type
+  {
+    method: "GET",
+    url: "/api/constant/type",
+    handler: constantController.getType,
+  },
+  {
+    method: "GET",
+    url: "/api/constant/type/:id",
+    handler: constantController.getSingleType,
+  },
+  {
+    method: "POST",
+    url: "/api/constant/type",
+    beforeHandler: [auth.getAdminToken],
+    handler: constantController.addType,
+  },
+  {
+    method: "POST",
+    url: "/api/constant/type/:id",
+    beforeHandler: [auth.getAdminToken],
+    handler: constantController.updateType,
+  },
+  {
+    method: "POST",
+    url: "/api/constant/delete-type/:id",
+    beforeHandler: [auth.getAdminToken],
+    handler: constantController.deleteType,
+  },
+
   //subcategory
   {
     method: "GET",
