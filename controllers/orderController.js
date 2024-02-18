@@ -444,7 +444,8 @@ exports.updateOrder = async (req, reply) => {
         if(emplployee)
           await CreateGeneralNotification(emplployee.fcmToken, NOTIFICATION_TITILES.ORDERS, msg, NOTIFICATION_TYPE.ORDERS, check._id, check.user._id, emplployee._id, "", "");
       }
-  
+      await Order.findByIdAndUpdate( req.params.id, { status: req.body.status },{ new: true })
+
       reply
       .code(200)
       .send(
