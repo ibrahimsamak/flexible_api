@@ -737,9 +737,10 @@ exports.getUserOrder = async (req, reply) => {
         _newUser.work = work
   
         var _obj = {
-          _id:i._id,
+          _id: i._id,
           user: _newUser,
-          price: i.price
+          price: i.price,
+          status: i.status
         }
         offers.push(_obj);
       }
@@ -968,6 +969,7 @@ exports.getOrderDetails = async (req, reply) => {
           subs.push(obj)
         });
       }
+      
       _newUser.country = country
       _newUser.categories = subs
       _newUser.work = work
@@ -975,7 +977,8 @@ exports.getOrderDetails = async (req, reply) => {
       var _obj = {
         _id:i._id,
         user: _newUser,
-        price: i.price
+        price: i.price,
+        status: i.status
       }
       offers.push(_obj);
     }
