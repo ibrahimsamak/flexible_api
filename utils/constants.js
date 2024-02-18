@@ -73,7 +73,7 @@ const ORDER_STATUS = Object.freeze({
 
 const PASSENGER_STATUS = Object.freeze({
   add_offer:"add_offer",
-  accept_offer: "accepet_offer",
+  accept_offer: "accept_offer",
   reject_offer: "reject_offer",
   attend:"attend",
   not_attend:"not_attend"
