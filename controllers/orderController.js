@@ -378,14 +378,12 @@ exports.updateOrder = async (req, reply) => {
       }
       if(req.body.status == ORDER_STATUS.accpeted) {
         msg = msg_accpet;
-        var emp = await employee.findById(req.body.employee);
+        var emp = check.offers.find(x=>x.status == PASSENGER_STATUS.accept_offer)
         await Order.findByIdAndUpdate(
           req.params.id,
           {
             status: req.body.status,
-            employee: req.body.employee,
-            supervisor: emp ? emp.supervisor_id : null,
-            canceled_note: req.body.canceled_note
+            provider: emp.user,
           },
           { new: true }
         )
