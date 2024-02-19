@@ -308,7 +308,8 @@ exports.updateOffer = async (req, reply) => {
       
       if(req.body.status == PASSENGER_STATUS.accept_offer){
         msg = msg_accpet;
-        await Order.findByIdAndUpdate(sp._id, { status: ORDER_STATUS.accpeted, provider: sp.user}, { new: true } )
+        var emp = sp.offers.find(x=>x.status == PASSENGER_STATUS.accept_offer)
+        await Order.findByIdAndUpdate(sp._id, { status: ORDER_STATUS.accpeted, provider: emp.user}, { new: true } )
       }
       if(req.body.status == PASSENGER_STATUS.reject_offer){
         msg = msg_reject;
@@ -378,15 +379,17 @@ exports.updateOrder = async (req, reply) => {
       }
       if(req.body.status == ORDER_STATUS.accpeted) {
         msg = msg_accpet;
-        var emp = check.offers.find(x=>x.status == PASSENGER_STATUS.accept_offer)
-        await Order.findByIdAndUpdate(
-          req.params.id,
-          {
-            status: req.body.status,
-            provider: emp.user,
-          },
-          { new: true }
-        )
+        // var emp = await employee.findById(req.body.employee);
+        // await Order.findByIdAndUpdate(
+        //   req.params.id,
+        //   {
+        //     status: req.body.status,
+        //     employee: req.body.employee,
+        //     supervisor: emp ? emp.supervisor_id : null,
+        //     canceled_note: req.body.canceled_note
+        //   },
+        //   { new: true }
+        // )
         if(emp){
           await CreateGeneralNotification(emp.fcmToken, NOTIFICATION_TITILES.ORDERS, msg, NOTIFICATION_TYPE.ORDERS, check._id, check.user.fcmToken, check.user._id, "", "");
         }
