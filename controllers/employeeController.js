@@ -505,7 +505,7 @@ exports.logout = async (req, reply) => {
             200,
             MESSAGE_STRING_ARABIC.USER_LOGOUT,
             MESSAGE_STRING_ENGLISH.USER_LOGOUT,
-            user
+            null
           )
         );
       return;
