@@ -662,15 +662,19 @@ exports.getCityAdmins = async (req, reply) => {
     var page = parseFloat(req.query.page, 10);
     var limit = parseFloat(req.query.limit, 10);
 
+    var q = {$and:[{ isDeleted: false }]}
+    if(req.params.id && req.params.id != ""){
+      q.$and.push(req.params.id);
+    }
     const cities = await city
-      .find({ $and: [{ isDeleted: false }, { country_id: req.params.id }] })
+      .find(q)
       .populate("country_id")
       .skip(page * limit)
       .limit(limit)
       .sort({ _id: -1 });
 
     const total = await city
-      .find({ $and: [{ isDeleted: false }, { country_id: req.params.id }] })
+      .find(q)
       .countDocuments();
 
     reply.code(200).send(

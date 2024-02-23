@@ -92,29 +92,13 @@ const UserSchema = mongoose.Schema(
       type: Number ,
       default: 0,
     },
-    country: {
-      type: mongoose.Schema.Types.ObjectId, ref: "countries",
-    },
-    work: {
-      type: mongoose.Schema.Types.ObjectId, ref: "co_type",
-    },
+    country: { type: mongoose.Schema.Types.ObjectId, ref: "countries" },
+    work: { type: mongoose.Schema.Types.ObjectId, ref: "co_type" },
     categories:{type:[ {type: mongoose.Schema.Types.ObjectId, ref: "category"} ]},
-    register_type:{
-      type:String,
-      enum:['personal','company']
-    },
-    app_type:{
-      type:String,
-      enum:['customer','provider']
-    },
-    by:{
-      type: String,
-      default: ""
-    },
-    loc: {
-      type: { type: String },
-      coordinates: [],
-    },
+    register_type:{ type:String, enum:['personal','company'] },
+    app_type:{ type:String, enum:['customer','provider'] },
+    by:{ type: String, default: ""},
+    loc: { type: { type: String }, coordinates: []},
   },
   { versionKey: false }
 );

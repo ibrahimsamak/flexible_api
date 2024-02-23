@@ -67,8 +67,7 @@ exports.getUsers = async (req, reply) => {
 
     let query1 = {};
     query1[search_field] = { $regex: new RegExp(search_value, "i") };
-
-    console.log('xxxxxxxx')
+    query1['app_type'] = 'customer'
     const total = await Users.find(query1).countDocuments();
     const item = await Users.find(query1)
       .populate("city_id")
@@ -108,6 +107,7 @@ exports.getUsersExcel = async (req, reply) => {
 
     let query1 = {};
     query1[search_field] = { $regex: new RegExp(search_value, "i") };
+    query1['app_type'] = 'customer'
 
     const total = await Users.find(query1).countDocuments();
     const item = await Users.find(query1).populate("city_id");
@@ -1568,9 +1568,26 @@ exports.getUsers = async (req, reply) => {
     var limit = parseFloat(req.query.limit, 10);
     let search_field = req.body.search_field;
     let search_value = req.body.search_value;
+    let user_type = req.body.user_type;
 
     let query1 = {};
     query1[search_field] = { $regex: new RegExp(search_value, "i") };
+    query1['app_type'] = 'customer'
+
+    if(user_type == "delete"){
+      query1['isBlock'] = true
+    }
+    if(user_type == "active"){
+      query1['isBlock'] = false
+    }
+  if (
+      req.body.dt_from &&
+      req.body.dt_from != "" &&
+      req.body.dt_to &&
+      req.body.dt_to != ""
+    ) {
+      query1["createAt"]= { $gte: new Date(new Date(req.body.dt_from).setHours(0, 0, 0)), $lt: new Date(new Date(req.body.dt_to).setHours(23, 59, 59)) }
+    }
 
     const total = await Users.find(query1).countDocuments();
     const item = await Users.find(query1)
@@ -1610,9 +1627,26 @@ exports.getUsersExcel = async (req, reply) => {
   try {
     let search_field = req.body.search_field;
     let search_value = req.body.search_value;
+    let user_type = req.body.user_type;
 
     let query1 = {};
     query1[search_field] = { $regex: new RegExp(search_value, "i") };
+    query1['app_type'] = 'customer'
+
+    if(user_type == "delete"){
+      query1['isBlock'] = true
+    }
+    if(user_type == "active"){
+      query1['isBlock'] = false
+    }
+  if (
+      req.body.dt_from &&
+      req.body.dt_from != "" &&
+      req.body.dt_to &&
+      req.body.dt_to != ""
+    ) {
+      query1["createAt"]= { $gte: new Date(new Date(req.body.dt_from).setHours(0, 0, 0)), $lt: new Date(new Date(req.body.dt_to).setHours(23, 59, 59)) }
+    }
 
     const item = await Users.find(query1)
       .populate("city_id")
@@ -1840,13 +1874,11 @@ exports.updateUser = async (req, reply) => {
           req.raw.body._id,
           {
             image: img,
+            phone_number: req.raw.body.phone_number,
             email: String(req.raw.body.email).toLowerCase(),
             address: req.raw.body.address,
             full_name: req.raw.body.full_name,
-            streetName: req.raw.body.streetName,
-            floorNo: req.raw.body.floorNo,
-            buildingNo: req.raw.body.buildingNo,
-            flatNo: req.raw.body.flatNo
+            work: req.raw.body.work
           },
           { new: true }
         ).select();
@@ -1878,12 +1910,10 @@ exports.updateUser = async (req, reply) => {
           req.raw.body._id,
           {
             email: String(req.raw.body.email).toLowerCase(),
+            phone_number: req.raw.body.phone_number,
             address: req.raw.body.address,
             full_name: req.raw.body.full_name,
-            streetName: req.raw.body.streetName,
-            floorNo: req.raw.body.floorNo,
-            buildingNo: req.raw.body.buildingNo,
-            flatNo: req.raw.body.flatNo
+            work: req.raw.body.work
           },
           { new: true }
         ).select();

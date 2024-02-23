@@ -37,6 +37,7 @@ const { getCurrentDateTime } = require("../models/Constant");
 const { Favorite } = require("../models/Favorite");
 const { Adv } = require("../models/adv");
 const { request } = require("request");
+const { Users } = require("../models/User");
 
 
 exports.getProductsByCategoryId = async (req, reply) => {
@@ -398,7 +399,9 @@ exports.getCategories = async (req, reply) => {
 exports.getSuppliers = async (req, reply) => {
   try {
     const language = req.headers["accept-language"];
-    const _Category = await Supplier.find({isDeleted:false})
+    query1["app_type"] = 'provider'
+
+    const _Category = await Users.find({app_type:'provider'})
       .sort({ _id: -1 })
       .populate("cities");
     reply

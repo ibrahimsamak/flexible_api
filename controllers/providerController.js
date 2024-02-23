@@ -37,6 +37,7 @@ const {
   ORDER_STATUS,
 } = require("../utils/constants");
 const { times } = require("../models/Constant");
+const { Users } = require("../models/User");
 
 ///////////Admin//////////
 exports.addTime = async (req, reply) => {
@@ -151,7 +152,7 @@ exports.getProviderTimes = async (req, reply) => {
 
 exports.getAllSupplier = async (req, reply) => {
   try {
-    const item = await Supplier.find({isDeleted:false})
+    const item = await Users.find({app_type:'provider'})
       .populate("cities")
       .sort({ _id: -1 });
 
@@ -173,12 +174,29 @@ exports.getSupplier = async (req, reply) => {
     var limit = parseFloat(req.query.limit, 10);
     let search_field = req.body.search_field;
     let search_value = req.body.search_value;
+    let user_type = req.body.user_type;
 
     let query1 = {};
     query1[search_field] = { $regex: new RegExp(search_value, "i") };
-    query1["isDeleted"] = false
-    const total = await Supplier.find(query1).countDocuments();
-    const item = await Supplier.find(query1)
+    query1["app_type"] = 'provider'
+
+    if(user_type == "delete"){
+      query1['isBlock'] = true
+    }
+    if(user_type == "active"){
+      query1['isBlock'] = false
+    }
+  if (
+      req.body.dt_from &&
+      req.body.dt_from != "" &&
+      req.body.dt_to &&
+      req.body.dt_to != ""
+    ) {
+      query1["createAt"]= { $gte: new Date(new Date(req.body.dt_from).setHours(0, 0, 0)), $lt: new Date(new Date(req.body.dt_to).setHours(23, 59, 59)) }
+    }
+
+    const total = await Users.find(query1).countDocuments();
+    const item = await Users.find(query1)
       .populate("cities")
       .skip(page * limit)
       .limit(limit)
@@ -214,11 +232,27 @@ exports.getProviderExcel = async (req, reply) => {
   try {
     let search_field = req.body.search_field;
     let search_value = req.body.search_value;
+    let user_type = req.body.user_type;
 
     let query1 = {};
     query1[search_field] = { $regex: new RegExp(search_value, "i") };
-    query1["isDeleted"]=false
-    const item = await Supplier.find(query1)
+    query1["app_type"] = 'provider'
+
+    if(user_type == "delete"){
+      query1['isBlock'] = true
+    }
+    if(user_type == "active"){
+      query1['isBlock'] = false
+    }
+  if (
+      req.body.dt_from &&
+      req.body.dt_from != "" &&
+      req.body.dt_to &&
+      req.body.dt_to != ""
+    ) {
+      query1["createAt"]= { $gte: new Date(new Date(req.body.dt_from).setHours(0, 0, 0)), $lt: new Date(new Date(req.body.dt_to).setHours(23, 59, 59)) }
+    }
+    const item = await Users.find(query1)
       .populate("cities")
       .sort({ _id: -1 });
     const response = {
@@ -234,7 +268,7 @@ exports.getProviderExcel = async (req, reply) => {
 };
 
 exports.sendSupplierMS = async (req, reply) => {
-  let user = await Supplier.findById(req.params.id);
+  let user = await Users.findById(req.params.id);
   if (!user) {
     const response = {
       status_code: 400,
@@ -260,7 +294,7 @@ exports.getSingleProviderAdmin = async (req, reply) => {
   const language = req.headers["accept-language"];
   try {
     const user_id = req.params.id;
-    const _Users = await Supplier.findById(user_id).populate("cities").select();
+    const _Users = await Users.findById(user_id).populate("categories").select();
     if (!_Users) {
       reply
         .code(200)
@@ -315,7 +349,7 @@ exports.updateProvider = async (req, reply) => {
       phone_number: req.raw.body.phone_number,
     });
 
-    if (!req.raw.body.email || !req.raw.body.name || !req.raw.body.cities) {
+    if (!req.raw.body.email || !req.raw.body.full_name || !req.raw.body.categories) {
       reply
         .code(200)
         .send(
@@ -342,7 +376,7 @@ exports.updateProvider = async (req, reply) => {
         );
       return;
     }
-    const _Users = await Supplier.findOne({
+    const _Users = await Users.findOne({
       $and: [
         { _id: { $ne: req.raw.body._id } },
         {isDeleted:false},
@@ -409,7 +443,7 @@ exports.updateProvider = async (req, reply) => {
           );
         }
 
-        const prevProvider = await Supplier.findById(req.raw.body._id);
+        const prevProvider = await Users.findById(req.raw.body._id);
         let img = prevProvider.image;
         let cover = prevProvider.cover;
         if (data)
@@ -422,19 +456,15 @@ exports.updateProvider = async (req, reply) => {
             cover = x;
           });
 
-        const _newUser = await Supplier.findByIdAndUpdate(
+        const _newUser = await Users.findByIdAndUpdate(
           req.raw.body._id,
           {
             image: img,
             email: String(req.raw.body.email).toLowerCase(),
             phone_number: req.raw.body.phone_number,
-            password: encryptPassword(req.raw.body.password),
-            cities: JSON.parse(req.raw.body.cities),
-            name: req.raw.body.name,
-            details: req.raw.body.details,
-            orderPercentage: req.raw.body.orderPercentage,
-            roles: JSON.parse(req.raw.body.roles),
-            target: req.raw.body.target
+            full_name: req.raw.body.full_name,
+            address: req.raw.body.address,
+            categories: JSON.parse(req.raw.body.categories),
           },
           { new: true, runValidators: true },
           function (err, model) {
@@ -470,18 +500,14 @@ exports.updateProvider = async (req, reply) => {
           );
         return;
       } else {
-        const _newUser = await Supplier.findByIdAndUpdate(
+        const _newUser = await Users.findByIdAndUpdate(
           req.raw.body._id,
           {
             email: String(req.raw.body.email).toLowerCase(),
             phone_number: req.raw.body.phone_number,
-            password: encryptPassword(req.raw.body.password),
-            cities: JSON.parse(req.raw.body.cities),
-            name: req.raw.body.name,
-            details: req.raw.body.details,
-            orderPercentage: req.raw.body.orderPercentage,
-            roles: JSON.parse(req.raw.body.roles),
-            target: req.raw.body.target
+            full_name: req.raw.body.full_name,
+            address: req.raw.body.address,
+            categories: JSON.parse(req.raw.body.categories),
           },
           { new: true, runValidators: true },
           function (err, model) {
@@ -559,7 +585,7 @@ exports.addProvider = async (req, reply) => {
         );
       return;
     }
-    const _Users = await Supplier.findOne({
+    const _Users = await Users.findOne({
       $and:[
         {isDeleted:false},
         { 
@@ -676,7 +702,7 @@ exports.addProvider = async (req, reply) => {
 
 exports.block = async (req, reply) => {
   try {
-    const user = await Supplier.findByIdAndUpdate(
+    const user = await Users.findByIdAndUpdate(
       req.body._id,
       {
         isBlock: req.body.isBlock,
@@ -730,7 +756,7 @@ exports.block = async (req, reply) => {
 
 exports.delete = async (req, reply) => {
   try {
-    const user = await Supplier.findByIdAndUpdate(
+    const user = await Users.findByIdAndUpdate(
       req.body._id,
       {
         isDeleted: true,

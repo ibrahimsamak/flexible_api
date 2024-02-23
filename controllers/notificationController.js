@@ -139,6 +139,8 @@ exports.getAdminNotification = async (req, reply) => {
 
     var page = parseFloat(req.query.page, 10);
     var limit = parseFloat(req.query.limit, 10);
+    var query = {$and:[{fromName: USER_TYPE.PANEL}]};
+    
     var query = {};
     if (
       req.body.dt_from &&

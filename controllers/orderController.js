@@ -309,7 +309,7 @@ exports.updateOffer = async (req, reply) => {
       if(req.body.status == PASSENGER_STATUS.accept_offer){
         msg = msg_accpet;
         var emp = sp.offers.find(x=>x.status == PASSENGER_STATUS.accept_offer)
-        await Order.findByIdAndUpdate(sp._id, { status: ORDER_STATUS.accpeted, provider: emp.user}, { new: true } )
+        await Order.findByIdAndUpdate(sp._id, { status: ORDER_STATUS.accpeted, provider: emp.user, total: emp.price}, { new: true } )
       }
       if(req.body.status == PASSENGER_STATUS.reject_offer){
         msg = msg_reject;
@@ -395,21 +395,21 @@ exports.updateOrder = async (req, reply) => {
         }
         await CreateGeneralNotification(check.user.fcmToken, NOTIFICATION_TITILES.ORDERS, msg, NOTIFICATION_TYPE.ORDERS, check._id, check.employee, check.user._id, "", "");
       }
-      if(req.body.status == ORDER_STATUS.updated) {
-        var code = "1234"; // makeid(6)
-        msg = msg_updated + " كود العملية هو: " + code;
+      // if(req.body.status == ORDER_STATUS.updated) {
+      //   var code = "1234"; // makeid(6)
+      //   msg = msg_updated + " كود العملية هو: " + code;
         
-        var subs = await SubCategory.find({_id:{$in:req.body.extra}})
-        var price = 0;
-        subs.forEach(element => { price += element.price });
-        var new_total = (Number(price) * Number(tax.value)) + Number(price)
-        var new_tax = (Number(price) * Number(tax.value)) 
+      //   var subs = await SubCategory.find({_id:{$in:req.body.extra}})
+      //   var price = 0;
+      //   subs.forEach(element => { price += element.price });
+      //   var new_total = (Number(price) * Number(tax.value)) + Number(price)
+      //   var new_tax = (Number(price) * Number(tax.value)) 
 
-        await Order.findByIdAndUpdate( req.params.id, { update_code: code , extra: req.body.extra , tax: Number(new_tax)+Number(check.tax), new_total: new_total, new_tax: new_tax, total: Number(/* The above code is declaring a variable called "new_total" in JavaScript. However, the code is incomplete and does not provide any further information about what the variable is intended to be used for or how it is being assigned a value. */
-        new_total)+Number(check.total), netTotal: Number(new_total)+Number(check.total)},{ new: true })       
-        await sendSMS(check.user.phone_number, "", "", msg)
-        await CreateGeneralNotification(check.user.fcmToken, NOTIFICATION_TITILES.ORDERS, msg, NOTIFICATION_TYPE.ORDERS, check._id, check.employee, check.user._id, "", "");
-      }
+      //   await Order.findByIdAndUpdate( req.params.id, { update_code: code , extra: req.body.extra , tax: Number(new_tax)+Number(check.tax), new_total: new_total, new_tax: new_tax, total: Number(/* The above code is declaring a variable called "new_total" in JavaScript. However, the code is incomplete and does not provide any further information about what the variable is intended to be used for or how it is being assigned a value. */
+      //   new_total)+Number(check.total), netTotal: Number(new_total)+Number(check.total)},{ new: true })       
+      //   await sendSMS(check.user.phone_number, "", "", msg)
+      //   await CreateGeneralNotification(check.user.fcmToken, NOTIFICATION_TITILES.ORDERS, msg, NOTIFICATION_TYPE.ORDERS, check._id, check.employee, check.user._id, "", "");
+      // }
       if(req.body.status == ORDER_STATUS.prefinished) {
         var code =  "1234";//makeid(6)
         msg = msg_prefinished + " كود العملية هو: " + code;
@@ -1247,9 +1247,9 @@ exports.getRates = async (req, reply) => {
     }
     const total = await Rate.countDocuments({ $and:[{provider_id: req.query.target_id}, {type: type}] }).countDocuments();
     const item = await Rate.find({ $and:[{provider_id: req.query.target_id}, {type: type}]  })
-    .sort({ _id: -1 })
     .populate("user_id", "-token")
     .populate("provider_id", "-token")
+    .sort({ _id: -1 })
     .skip(page * limit)
     .limit(limit);
 
@@ -2711,18 +2711,48 @@ exports.getOrders = async (req, reply) => {
       query["place"] = req.body.place_id;
 
 
-      console.log(query)
+    console.log(query)
     const total = await Order.find(query).countDocuments();
     const item = await Order.find(query)
+      .populate({ path: "offers.user", populate: { path: "user" } })
+      .populate({
+        path: "user",
+        populate: {
+          path: "categories",
+        },
+      })
+      .populate({
+        path: "user",
+        populate: {
+          path: "country",
+        },
+      })
+      .populate({
+        path: "user",
+        populate: {
+          path: "work",
+        },
+      })
+      .populate({
+        path: "provider",
+        populate: {
+          path: "categories",
+        },
+      })
+      .populate({
+        path: "provider",
+        populate: {
+          path: "country",
+        },
+      })
+      .populate({
+        path: "provider",
+        populate: {
+          path: "work",
+        },
+      })
+      .populate("category")
       .sort({ _id: -1 })
-      .populate("user", "-token")
-      .populate({ path: "extra", populate: { path: "subcategory" } })
-      .populate("employee", "-token")
-      .populate("supervisor", "-token")
-      .populate("provider")
-      .populate("sub_category_id")
-      .populate("category_id")
-      .populate("address")
       .skip(page * limit)
       .limit(limit)
       .select();
@@ -2969,18 +2999,12 @@ exports.getOrdersRateList = async (req, reply) => {
       const total = await Rate.find(query).countDocuments();
       const item = await Rate.find(query)
       .populate("order_id")
-      .populate("user_id", ["-password", "-token"])
-      .populate("driver_id", ["-password", "-token"])
-        .sort({ _id: -1 })
-        .skip(page * limit)
-        .limit(limit);
-      var rateArray = [];
-      for await (const data of item) {
-        var newObject = data.toObject();
-        const ord = await Order.findById(data.destination_id);
-        if (ord) newObject.order_no = ord.Order_no;
-        rateArray.push(newObject);
-      }
+      .populate("user_id", "-token")
+      .populate("provider_id", "-token")
+      .sort({ _id: -1 })
+      .skip(page * limit)
+      .limit(limit);
+
   
       reply
         .code(200)
@@ -2990,7 +3014,7 @@ exports.getOrdersRateList = async (req, reply) => {
           200,
           MESSAGE_STRING_ARABIC.SUCCESS,
           MESSAGE_STRING_ENGLISH.SUCCESS,
-          rateArray,
+          item,
           {
             size: rateArray.length,
             totalElements: total,
@@ -3014,22 +3038,16 @@ exports.getOrdersRateList = async (req, reply) => {
           },
         };
       }
+      query['type']=req.body.type;
       const total = await Rate.find(query).countDocuments();
       const item = await Rate.find(query)
       .populate("order_id")
-      .populate("user_id", ["-password", "-token"])
-      .populate("driver_id", ["-password", "-token"])
+      .populate("user_id", "-token")
+      .populate("provider_id", "-token")
         .sort({ _id: -1 })
         .skip(page * limit)
         .limit(limit);
-      var rateArray = [];
-      for await (const data of item) {
-        var newObject = data.toObject();
-        const ord = await Order.findById(data.destination_id);
-        if (ord) newObject.order_no = ord.Order_no;
-        rateArray.push(newObject);
-      }
-  
+
       reply
         .code(200)
         .send(
@@ -3038,9 +3056,9 @@ exports.getOrdersRateList = async (req, reply) => {
           200,
           MESSAGE_STRING_ARABIC.SUCCESS,
           MESSAGE_STRING_ENGLISH.SUCCESS,
-          rateArray,
+          item,
           {
-            size: rateArray.length,
+            size: item.length,
             totalElements: total,
             totalPages: Math.floor(total / limit),
             pageNumber: page,

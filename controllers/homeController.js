@@ -73,26 +73,26 @@ exports.getCounterOrdersWithStatus = async (req, reply) => {
       };
       reply.send(response);
     }
-    else if (req.user.userType == ACTORS.STORE){
-      let provider_id = req.user._id;
-      const NewOrder = await Order.countDocuments({ $and: [{ status: ORDER_STATUS.new }, { provider: provider_id }],});
-      const ProccessingOrder = await Order.countDocuments({ $or:[{status: ORDER_STATUS.accpeted }, {status: ORDER_STATUS.progress }, {status: ORDER_STATUS.updated }, {status: ORDER_STATUS.started }]});
-      const DoneOrder = await Order.countDocuments({$and: [{$or: [{status: ORDER_STATUS.prefinished }, {status: ORDER_STATUS.finished }, {status: ORDER_STATUS.rated }]}, { provider: provider_id }]});
-      const CancelOrder = await Order.countDocuments({$and: [{$or: [{status: ORDER_STATUS.canceled_by_admin }, {status: ORDER_STATUS.canceled_by_driver }, {status: ORDER_STATUS.canceled_by_user }]}, { provider: provider_id }]});
-      const AllOrder = await Order.countDocuments({provider: provider_id});
+    // else if (req.user.userType == ACTORS.STORE){
+    //   let provider_id = req.user._id;
+    //   const NewOrder = await Order.countDocuments({ $and: [{ status: ORDER_STATUS.new }, { provider: provider_id }],});
+    //   const ProccessingOrder = await Order.countDocuments({ $or:[{status: ORDER_STATUS.accpeted }, {status: ORDER_STATUS.progress }, {status: ORDER_STATUS.updated }, {status: ORDER_STATUS.started }]});
+    //   const DoneOrder = await Order.countDocuments({$and: [{$or: [{status: ORDER_STATUS.prefinished }, {status: ORDER_STATUS.finished }, {status: ORDER_STATUS.rated }]}, { provider: provider_id }]});
+    //   const CancelOrder = await Order.countDocuments({$and: [{$or: [{status: ORDER_STATUS.canceled_by_admin }, {status: ORDER_STATUS.canceled_by_driver }, {status: ORDER_STATUS.canceled_by_user }]}, { provider: provider_id }]});
+    //   const AllOrder = await Order.countDocuments({provider: provider_id});
 
-      const response = {
-        status_code: 200,
-        status: true,
-        message: "تمت العملية بنجاح",
-        NewOrder: NewOrder,
-        ProccessingOrder: ProccessingOrder,
-        DoneOrder: DoneOrder,
-        CancelOrder: CancelOrder,
-        AllOrder: AllOrder,
-      };
-      reply.send(response);
-    }
+    //   const response = {
+    //     status_code: 200,
+    //     status: true,
+    //     message: "تمت العملية بنجاح",
+    //     NewOrder: NewOrder,
+    //     ProccessingOrder: ProccessingOrder,
+    //     DoneOrder: DoneOrder,
+    //     CancelOrder: CancelOrder,
+    //     AllOrder: AllOrder,
+    //   };
+    //   reply.send(response);
+    // }
   } catch (err) {
     throw boom.boomify(err);
   }
@@ -100,16 +100,11 @@ exports.getCounterOrdersWithStatus = async (req, reply) => {
 
 exports.getCounterUsers = async (req, reply) => {
   try {
-    const _Supplier = await Supplier.find({isDeleted:false}).countDocuments();
-    const _employee = await employee.find({isDeleted:false}).countDocuments();
-    const _Users = await Users.find().countDocuments();
-    const _Admin = await Admin.find().countDocuments();
-    const New = await Order.find({
-      $and: [{ OrderType: 1 }, { StatusId: 4 }],
-    }).countDocuments();
-    const Replacment = await Order.find({
-      $and: [{ OrderType: 2 }, { StatusId: 4 }],
-    }).countDocuments();
+
+    const _Supplier = await Users.countDocuments({register_type:'personal'});
+    const _Users = await Users.countDocuments({register_type:'company'});
+    const _Admin = await Admin.countDocuments();
+    const _Orders = await Order.countDocuments();
 
     const response = {
       status_code: 200,
@@ -117,10 +112,8 @@ exports.getCounterUsers = async (req, reply) => {
       message: "تمت العملية بنجاح",
       Users: _Users,
       Supplier: _Supplier,
-      Employee: _employee,
+      Orders: _Orders,
       Admins: _Admin,
-      Replacment: Replacment,
-      New: New,
     };
     reply.send(response);
   } catch (err) {
@@ -147,7 +140,8 @@ exports.UsersproviderPerYear = async (req, reply) => {
 
     var items = [];
     var items2 = [];
-    const result = await Users.find().sort({ createAt: 1 });
+    const result = await Users.find({app_type:'provider'}).sort({ createAt: 1 });
+    const result2 = await Users.find({app_type:'customer'}).sort({ createAt: 1 });
     result.forEach((element) => {
       var month_number = new Date(element.createAt).getMonth();
       var month_year = new Date(element.createAt).getFullYear();
@@ -158,6 +152,16 @@ exports.UsersproviderPerYear = async (req, reply) => {
       }
     });
 
+    result2.forEach((element) => {
+      var month_number = new Date(element.createAt).getMonth();
+      var month_year = new Date(element.createAt).getFullYear();
+      let current_year = new Date().getFullYear()
+      var month_name = monthNames[month_number];
+      if(month_year == current_year){
+        items2.push({ month: month_name, user: element._id });
+      }
+    });
+
     var _result = lodash(items)
       .groupBy("month")
       .map(function (items, _name) {
@@ -165,13 +169,20 @@ exports.UsersproviderPerYear = async (req, reply) => {
       })
       .value();
 
+      var _result2 = lodash(items2)
+      .groupBy("month")
+      .map(function (items, _name) {
+        return { name: _name, value: items.length };
+      })
+      .value();
+
     var orderedResult = lodash.orderBy(_result, ["count"], ["desc"]);
-    // var orderedResult2 = lodash.orderBy(_result2, ["count"], ["desc"]);
+    var orderedResult2 = lodash.orderBy(_result2, ["count"], ["desc"]);
 
     const response = {
       items: [
-        { name: "مستخدم جديد", series: orderedResult },
-        // { name: "مصممين ومنفذين ومتاجر", series: orderedResult2 },
+        { name: "مزود جديد", series: orderedResult },
+        { name: "مستخدم جديد", series: orderedResult2 },
       ],
     };
     reply.send(response);
@@ -294,9 +305,7 @@ exports.getProviderOrdersPerYear = async (req, reply) => {
     if (req.params.id != null && req.params.id != "") {
       query["_id"] = req.params.id;
     }
-    var sup = await Supplier.find({
-      $and: [{ isDeleted: false }, query],
-    }).countDocuments();
+    var sup = await Supplier.find({ $and: [{ isDeleted: false }, query]}).countDocuments();
     const result = await Supplier.find({ $and: [{ isDeleted: false }, query] });
 
     result.forEach(async function (element) {

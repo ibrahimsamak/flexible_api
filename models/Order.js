@@ -26,13 +26,12 @@ const Orderschema = mongoose.Schema(
     createAt: { type: Date },
     couponCode: { type: String },
     paymentType: { type: String },
-    category: { type: mongoose.Schema.Types.ObjectId, ref: "category"},
-    offers:{type:[ {
+    offers:{type:[{
       user: { type: mongoose.Schema.Types.ObjectId, ref: "Users" },
       price:  { type: Number, default: 0  },
       status: { type: String, default: "" },
-     }
-    ]},
+     }]},
+    category: { type: mongoose.Schema.Types.ObjectId, ref: "category"},
     user: { type: mongoose.Schema.Types.ObjectId, ref: "Users" },
     provider: { type: mongoose.Schema.Types.ObjectId, ref: "Users" },
     notes: { type: String, default:"" },
