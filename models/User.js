@@ -93,6 +93,7 @@ const UserSchema = mongoose.Schema(
       default: 0,
     },
     country: { type: mongoose.Schema.Types.ObjectId, ref: "countries" },
+    city: { type: mongoose.Schema.Types.ObjectId, ref: "city" },
     work: { type: mongoose.Schema.Types.ObjectId, ref: "co_type" },
     categories:{type:[ {type: mongoose.Schema.Types.ObjectId, ref: "category"} ]},
     register_type:{ type:String, enum:['personal','company'] },

@@ -140,24 +140,22 @@ exports.getAdminNotification = async (req, reply) => {
     var page = parseFloat(req.query.page, 10);
     var limit = parseFloat(req.query.limit, 10);
     var query = {$and:[{fromName: USER_TYPE.PANEL}]};
-    
-    var query = {};
     if (
       req.body.dt_from &&
       req.body.dt_from != "" &&
       req.body.dt_to &&
       req.body.dt_to != ""
     ) {
-      query = {
+      query.$and.push({
         dt_date: {
           $gte: new Date(new Date(req.body.dt_from).setHours(0, 0, 0)),
           $lt: new Date(new Date(req.body.dt_to).setHours(23, 59, 59)),
         },
-      };
+      });
     }
-    if (req.user.userType == USER_TYPE.ADMIN)
-      query["user_id"] = USER_TYPE.PANEL;
-    if (req.user.userType != USER_TYPE.ADMIN) query["user_id"] = req.user._id;
+    // if (req.user.userType == USER_TYPE.ADMIN)
+    //   query["user_id"] = USER_TYPE.PANEL;
+    // if (req.user.userType != USER_TYPE.ADMIN) query["user_id"] = req.user._id;
     const total = await Notifications.find(query).countDocuments();
     const _Notification = await Notifications.find(query)
       .sort({ dt_date: -1 })

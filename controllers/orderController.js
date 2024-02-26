@@ -150,6 +150,7 @@ exports.addOrder = async (req, reply) => {
               type: "Point",
               coordinates: [Number(req.body.lat), Number(req.body.lng)],
             },
+            city: req.body.city
           });
 
           let rs = await Orders.save();
@@ -2502,18 +2503,60 @@ exports.getUserOrders = async (req, reply) => {
     let userId = req.params.id;
     var page = parseFloat(req.query.page, 10);
     var limit = parseFloat(req.query.limit, 10);
+    
+    var q = {$and:[{$or:[{provider: userId},{user: userId}]}]}
+    if(req.query.status && req.query.status != ""){
+      if(req.query.status == ORDER_STATUS.finished){
+        q.$and.push({status: {$in:[ORDER_STATUS.finished, ORDER_STATUS.rated, ORDER_STATUS.prefinished]}})
+      }
+      else if(req.query.status == 'canceled' ){
+        q.$and.push({status: {$in:[ORDER_STATUS.canceled_by_admin, ORDER_STATUS.canceled_by_driver, ORDER_STATUS.canceled_by_user]}})
+      }
+      else{
+        q.$and.push({status:req.query.status})
+      }
+    }
 
-    const total = await Order.find({ user: userId }).countDocuments();
-    const item = await Order.find({ user: userId })
-      .sort({ _id: -1 })
-      .populate("user", "-token")
-      .populate({ path: "extra", populate: { path: "subcategory" } })
-      .populate("employee", "-token")
-      .populate("provider")
-      .populate("supervisor")
-      .populate("sub_category_id")
-      .populate("category_id")
-      .populate("address")
+    const total = await Order.find(q).countDocuments();
+    const item = await Order.find(q)
+      .populate({ path: "offers.user", populate: { path: "user" } })
+      .populate({
+        path: "user",
+        populate: {
+          path: "categories",
+        },
+      })
+      .populate({
+        path: "user",
+        populate: {
+          path: "country",
+        },
+      })
+      .populate({
+        path: "user",
+        populate: {
+          path: "work",
+        },
+      })
+      .populate({
+        path: "provider",
+        populate: {
+          path: "categories",
+        },
+      })
+      .populate({
+        path: "provider",
+        populate: {
+          path: "country",
+        },
+      })
+      .populate({
+        path: "provider",
+        populate: {
+          path: "work",
+        },
+      })
+      .populate("category")
       .sort({ _id: -1 })
       .skip(page * limit)
       .limit(limit);
@@ -2546,17 +2589,59 @@ exports.getProivdeOrders = async (req, reply) => {
     var page = parseFloat(req.query.page, 10);
     var limit = parseFloat(req.query.limit, 10);
 
-    const total = await Order.find({ provider: userId }).countDocuments();
-    const item = await Order.find({ provider: userId })
-      .sort({ _id: -1 })
-      .populate("user", "-token")
-      .populate({ path: "extra", populate: { path: "subcategory" } })
-      .populate("employee", "-token")
-      .populate("provider")
-      .populate("supervisor")
-      .populate("sub_category_id")
-      .populate("category_id")
-      .populate("address")
+    var q = {$and:[{$or:[{provider: userId},{user: userId}]}]}
+    if(req.query.status && req.query.status != ""){
+      if(req.query.status == ORDER_STATUS.finished){
+        q.$and.push({status: {$in:[ORDER_STATUS.finished, ORDER_STATUS.rated, ORDER_STATUS.prefinished]}})
+      }
+      else if(req.query.status == 'canceled' ){
+        q.$and.push({status: {$in:[ORDER_STATUS.canceled_by_admin, ORDER_STATUS.canceled_by_driver, ORDER_STATUS.canceled_by_user]}})
+      }
+      else{
+        q.$and.push({status:req.query.status})
+      }
+    }
+
+    const total = await Order.find(q).countDocuments();
+    const item = await Order.find(q)
+    .populate({ path: "offers.user", populate: { path: "user" } })
+    .populate({
+      path: "user",
+      populate: {
+        path: "categories",
+      },
+    })
+    .populate({
+      path: "user",
+      populate: {
+        path: "country",
+      },
+    })
+    .populate({
+      path: "user",
+      populate: {
+        path: "work",
+      },
+    })
+    .populate({
+      path: "provider",
+      populate: {
+        path: "categories",
+      },
+    })
+    .populate({
+      path: "provider",
+      populate: {
+        path: "country",
+      },
+    })
+    .populate({
+      path: "provider",
+      populate: {
+        path: "work",
+      },
+    })
+    .populate("category")
       .sort({ _id: -1 })
       .skip(page * limit)
       .limit(limit);
@@ -2582,6 +2667,80 @@ exports.getProivdeOrders = async (req, reply) => {
   }
 };
 
+exports.getProivdeOrdersExcel = async (req, reply) => {
+  const language = req.headers["accept-language"];
+  // try {
+    let userId = req.params.id;
+
+    var q = {$and:[{$or:[{provider: userId},{user:userId}]}]}
+    if(req.query.status && req.query.status != ""){
+      if(req.query.status == ORDER_STATUS.finished){
+        q.$and.push({status: {$in:[ORDER_STATUS.finished, ORDER_STATUS.rated, ORDER_STATUS.prefinished]}})
+      }
+      else if(req.query.status == 'canceled' ){
+        q.$and.push({status: {$in:[ORDER_STATUS.canceled_by_admin, ORDER_STATUS.canceled_by_driver, ORDER_STATUS.canceled_by_user]}})
+      }
+      else{
+        q.$and.push({status:req.query.status})
+      }
+    }
+    const item = await Order.find(q)
+    .populate({ path: "offers.user", populate: { path: "user" } })
+    .populate({
+      path: "user",
+      populate: {
+        path: "categories",
+      },
+    })
+    .populate({
+      path: "user",
+      populate: {
+        path: "country",
+      },
+    })
+    .populate({
+      path: "user",
+      populate: {
+        path: "work",
+      },
+    })
+    .populate({
+      path: "provider",
+      populate: {
+        path: "categories",
+      },
+    })
+    .populate({
+      path: "provider",
+      populate: {
+        path: "country",
+      },
+    })
+    .populate({
+      path: "provider",
+      populate: {
+        path: "work",
+      },
+    })
+    .populate("category")
+      .sort({ _id: -1 })
+
+      
+    reply.code(200).send(
+      success(
+        language,
+        200,
+        MESSAGE_STRING_ARABIC.SUCCESS,
+        MESSAGE_STRING_ENGLISH.SUCCESS,
+        item
+      )
+    );
+    return;
+  // } catch (err) {
+  //   reply.code(200).send(errorAPI(language, 400, err.message, err.message));
+  //   return;
+  // }
+};
 exports.getSupervisorOrders = async (req, reply) => {
   const language = req.headers["accept-language"];
   try {
@@ -2816,15 +2975,45 @@ exports.getOrdersExcel = async (req, reply) => {
 
 
     const item = await Order.find(query)
+    .populate({ path: "offers.user", populate: { path: "user" } })
+      .populate({
+        path: "user",
+        populate: {
+          path: "categories",
+        },
+      })
+      .populate({
+        path: "user",
+        populate: {
+          path: "country",
+        },
+      })
+      .populate({
+        path: "user",
+        populate: {
+          path: "work",
+        },
+      })
+      .populate({
+        path: "provider",
+        populate: {
+          path: "categories",
+        },
+      })
+      .populate({
+        path: "provider",
+        populate: {
+          path: "country",
+        },
+      })
+      .populate({
+        path: "provider",
+        populate: {
+          path: "work",
+        },
+      })
+      .populate("category")
       .sort({ _id: -1 })
-      .populate("user", "-token")
-      .populate({ path: "extra", populate: { path: "subcategory" } })
-      .populate("employee", "-token")
-      .populate("supervisor", "-token")
-      .populate("provider")
-      .populate("sub_category_id")
-      .populate("category_id")
-      .populate("address")
       .select();
 
     const response = {

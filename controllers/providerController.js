@@ -195,6 +195,9 @@ exports.getSupplier = async (req, reply) => {
       query1["createAt"]= { $gte: new Date(new Date(req.body.dt_from).setHours(0, 0, 0)), $lt: new Date(new Date(req.body.dt_to).setHours(23, 59, 59)) }
     }
 
+    if(req.body.category && req.body.category != ""){
+      query1["categories"] = { $all: { _id: req.body.category } }
+    }
     const total = await Users.find(query1).countDocuments();
     const item = await Users.find(query1)
       .populate("cities")
@@ -205,7 +208,7 @@ exports.getSupplier = async (req, reply) => {
     var newArr = [];
     for await (const data of item) {
       var newUser = data.toObject();
-      var _order = await Order.countDocuments({$and: [{ provider: newUser._id }]});
+      var _order = await Order.countDocuments({$or: [{ provider: newUser._id },{ user: newUser._id }]});
       newUser.orders = _order;
       newArr.push(newUser);
     }
@@ -252,9 +255,13 @@ exports.getProviderExcel = async (req, reply) => {
     ) {
       query1["createAt"]= { $gte: new Date(new Date(req.body.dt_from).setHours(0, 0, 0)), $lt: new Date(new Date(req.body.dt_to).setHours(23, 59, 59)) }
     }
+    if(req.body.category && req.body.category != ""){
+      query1["categories"] = { $all: { _id: req.body.category } }
+    }
     const item = await Users.find(query1)
-      .populate("cities")
-      .sort({ _id: -1 });
+    .populate("city")
+    .populate("work")
+    .sort({ _id: -1 });
     const response = {
       status_code: 200,
       status: true,

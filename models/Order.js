@@ -34,6 +34,7 @@ const Orderschema = mongoose.Schema(
     category: { type: mongoose.Schema.Types.ObjectId, ref: "category"},
     user: { type: mongoose.Schema.Types.ObjectId, ref: "Users" },
     provider: { type: mongoose.Schema.Types.ObjectId, ref: "Users" },
+    city: { type: mongoose.Schema.Types.ObjectId, ref: "city" },
     notes: { type: String, default:"" },
     canceled_note: { type: String, default:"" },
     update_code: { type: String, default:"" },

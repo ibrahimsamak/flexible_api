@@ -609,6 +609,12 @@ const admin_routes = [
     beforeHandler: [auth.getAdminToken],
     handler: orderController.getProivdeOrders,
   },
+  {
+    method: "GET",
+    url: "/api/providers/orders-excel/:id",
+    beforeHandler: [auth.getAdminToken],
+    handler: orderController.getProivdeOrdersExcel,
+  },
   //supervisor
   {
     method: "GET",

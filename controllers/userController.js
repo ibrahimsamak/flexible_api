@@ -68,6 +68,9 @@ exports.getUsers = async (req, reply) => {
     let query1 = {};
     query1[search_field] = { $regex: new RegExp(search_value, "i") };
     query1['app_type'] = 'customer'
+    if(req.body.work && req.body.work!=""){
+      query1['work'] = req.body.work
+    }
     const total = await Users.find(query1).countDocuments();
     const item = await Users.find(query1)
       .populate("city_id")
@@ -110,7 +113,10 @@ exports.getUsersExcel = async (req, reply) => {
     query1['app_type'] = 'customer'
 
     const total = await Users.find(query1).countDocuments();
-    const item = await Users.find(query1).populate("city_id");
+    const item = await Users.find(query1)
+    .populate("city")
+    .populate('work');
+    
     console.log(item);
     const response = {
       status_code: 200,
@@ -1589,6 +1595,9 @@ exports.getUsers = async (req, reply) => {
       query1["createAt"]= { $gte: new Date(new Date(req.body.dt_from).setHours(0, 0, 0)), $lt: new Date(new Date(req.body.dt_to).setHours(23, 59, 59)) }
     }
 
+    if(req.body.work && req.body.work!=""){
+      query1['work'] = req.body.work
+    }
     const total = await Users.find(query1).countDocuments();
     const item = await Users.find(query1)
       .skip(page * limit)
@@ -1598,7 +1607,7 @@ exports.getUsers = async (req, reply) => {
     var newArr = [];
     for await (const data of item) {
       var newUser = data.toObject();
-      var _order = await Order.countDocuments({$and: [{ user: newUser._id }]});
+      var _order = await Order.countDocuments({$or: [{ provider: newUser._id },{ user: newUser._id }]});
       var referal = await Users.countDocuments({by:data._id})
       newUser.favorites = referal
       newUser.orders = _order;
@@ -1647,7 +1656,9 @@ exports.getUsersExcel = async (req, reply) => {
     ) {
       query1["createAt"]= { $gte: new Date(new Date(req.body.dt_from).setHours(0, 0, 0)), $lt: new Date(new Date(req.body.dt_to).setHours(23, 59, 59)) }
     }
-
+    if(req.body.work && req.body.work!=""){
+      query1['work'] = req.body.work
+    }
     const item = await Users.find(query1)
       .populate("city_id")
       .populate("country_id")
@@ -1776,9 +1787,7 @@ exports.updateUser = async (req, reply) => {
   const language = "ar";
   try {
     setLanguage(language);
-    var newUser = new Users({
-      phone_number: req.raw.body.phone_number,
-    });
+    var newUser = new Users({ phone_number: req.raw.body.phone_number });
     newUser.validate((err) => {
       if (err) {
         let msg = getErrors(err);
@@ -1787,11 +1796,7 @@ exports.updateUser = async (req, reply) => {
       }
     });
 
-    if (
-      !req.raw.body.email ||
-      !req.raw.body.full_name ||
-      !req.raw.body.address
-    ) {
+    if (!req.raw.body.email || !req.raw.body.full_name || !req.raw.body.address) {
       reply
         .code(200)
         .send(
@@ -1878,18 +1883,15 @@ exports.updateUser = async (req, reply) => {
             email: String(req.raw.body.email).toLowerCase(),
             address: req.raw.body.address,
             full_name: req.raw.body.full_name,
-            work: req.raw.body.work
+            work: req.raw.body.work,
+            city: req.raw.body.city,
           },
           { new: true }
         ).select();
 
         var newUser = _newUser.toObject();
-        var _order = await Order.find({
-          $and: [{ user_id: newUser._id }, { StatusId: 4 }],
-        }).countDocuments();
-        var _favorite = await Favorite.find({
-          user_id: newUser._id,
-        }).countDocuments();
+        var _order = await Order.find({ $and: [{ user_id: newUser._id }, { StatusId: 4 }] }).countDocuments();
+        var _favorite = await Favorite.find({ user_id: newUser._id, }).countDocuments();
         newUser.orders = _order;
         newUser.favorites = _favorite;
 
@@ -1913,7 +1915,8 @@ exports.updateUser = async (req, reply) => {
             phone_number: req.raw.body.phone_number,
             address: req.raw.body.address,
             full_name: req.raw.body.full_name,
-            work: req.raw.body.work
+            work: req.raw.body.work,
+            city: req.raw.body.city,
           },
           { new: true }
         ).select();

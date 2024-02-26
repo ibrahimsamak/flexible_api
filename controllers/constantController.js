@@ -760,13 +760,23 @@ exports.getSettings = async (req, reply) => {
     const settings = await setting.find().sort({ _id: -1 });
     const _country = await country.find().sort({ _id: -1 });
     var arr = []
-    _country.forEach(element => {
+    for await(const item of _country){
+      var cities = []
+      const _city = await city.find({$and:[{country_id:item._id},{isDeleted:false}]}).sort({ _id: -1 });
+      _city.forEach(_element => {
+        var obj = {
+          _id : _element._id,
+          title: _element[`${language}Name`],
+        }
+        cities.push(obj)
+      });
       var obj = {
-        _id : element._id,
-        title: element[`${language}Name`],
+        _id : item._id,
+        title: item[`${language}Name`],
+        cities: cities
       }
       arr.push(obj)
-    });
+    }
     var obj = {
       settings:settings,
       coutnry: arr
