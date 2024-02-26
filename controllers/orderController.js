@@ -707,11 +707,13 @@ exports.getUserOrder = async (req, reply) => {
         .populate("categories")
         .populate("country")
         .populate("work")
+        .populate("city")
   
         var _newUser = _user.toObject();
         var subs = []
         var country = null
         var work = null
+        var city = null
         if(_newUser.country){
           country = {
             _id: _newUser.country._id,
@@ -723,6 +725,13 @@ exports.getUserOrder = async (req, reply) => {
             _id: _newUser.work._id,
             title: _newUser.work[`${language}Name`],
             description: _newUser.work[`${language}Description`],
+          }
+        }
+        if(_newUser.city){
+          city = {
+            _id: _newUser.city._id,
+            title: _newUser.city[`${language}Name`],
+            description: _newUser.city[`${language}Description`],
           }
         }
         if(_newUser.categories){
@@ -738,6 +747,7 @@ exports.getUserOrder = async (req, reply) => {
         _newUser.country = country
         _newUser.categories = subs
         _newUser.work = work
+        _newUser.city = city
   
         var _obj = {
           _id: i._id,
@@ -837,6 +847,12 @@ exports.getOrderDetails = async (req, reply) => {
     .populate({
       path: "user",
       populate: {
+        path: "city",
+      },
+    })
+    .populate({
+      path: "user",
+      populate: {
         path: "country",
       },
     })
@@ -864,6 +880,12 @@ exports.getOrderDetails = async (req, reply) => {
         path: "work",
       },
     })
+    .populate({
+      path: "provider",
+      populate: {
+        path: "city",
+      },
+    })
     .populate("category")
     // .populate({ path: "offers.user", populate: { path: "user" } })
     .lean();
@@ -886,9 +908,11 @@ exports.getOrderDetails = async (req, reply) => {
     var subs = []
     var country = null
     var work = null
+    var city = null
     var subs2 = []
     var country2 = null
     var work2 = null
+    var city2 = null
     var offers = []
     obj.category = {
       _id: obj.category._id,
@@ -905,6 +929,12 @@ exports.getOrderDetails = async (req, reply) => {
       work = {
         _id: obj.user.work._id,
         title: obj.user.work[`${language}Name`],
+      }
+    }
+    if(obj.user && obj.user.city){
+      city = {
+        _id: obj.user.city._id,
+        title: obj.user.city[`${language}Name`],
       }
     }
     if(obj.user && obj.user.categories){
@@ -944,11 +974,13 @@ exports.getOrderDetails = async (req, reply) => {
       .populate("categories")
       .populate("country")
       .populate("work")
+      .populate("city")
 
       var _newUser = _user.toObject();
       var subs = []
       var country = null
       var work = null
+      var city = null
       if(_newUser.country){
         country = {
           _id: _newUser.country._id,
@@ -960,6 +992,13 @@ exports.getOrderDetails = async (req, reply) => {
           _id: _newUser.work._id,
           title: _newUser.work[`${language}Name`],
           description: _newUser.work[`${language}Description`],
+        }
+      }
+      if(_newUser.city){
+        city = {
+          _id: _newUser.city._id,
+          title: _newUser.city[`${language}Name`],
+          description: _newUser.city[`${language}Description`],
         }
       }
       if(_newUser.categories){
@@ -976,6 +1015,7 @@ exports.getOrderDetails = async (req, reply) => {
       _newUser.country = country
       _newUser.categories = subs
       _newUser.work = work
+      _newUser.city = city
 
       var _obj = {
         _id:i._id,
@@ -990,11 +1030,13 @@ exports.getOrderDetails = async (req, reply) => {
       obj.user.country = country
       obj.user.categories = subs
       obj.user.work = work
+      obj.user.city = city
     }
     if(obj.provider){
       obj.provider.country = country2
       obj.provider.categories = subs2
       obj.provider.work = work2
+      obj.provider.city = city2
     }
 
     obj.offers = offers

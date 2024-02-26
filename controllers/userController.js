@@ -267,6 +267,7 @@ exports.addUsers = async (req, reply) => {
         )
         .populate("categories")
         .populate("work")
+        .populate("city")
         .populate("country");
 
         let msg = "مرحبا بكم في تطبيق جاز توك رمز التفعيل هو: " + verify_code;
@@ -275,10 +276,18 @@ exports.addUsers = async (req, reply) => {
         var subs = []
         var country = null
         var work = null
+        var city = null
         if(newUser.country){
           country = {
             _id: newUser.country._id,
             title: newUser.country[`${language}Name`],
+          }
+        }
+        if(newUser.city){
+          city = {
+            _id: newUser.city._id,
+            title: newUser.city[`${language}Name`],
+            description: newUser.city[`${language}Description`],
           }
         }
         if(newUser.work){
@@ -302,6 +311,7 @@ exports.addUsers = async (req, reply) => {
         newUser.country = country
         newUser.categories = subs
         newUser.work = work
+        newUser.city = city
         reply
           .code(200)
           .send(
@@ -425,11 +435,13 @@ exports.verify = async (req, reply) => {
       )
       .populate('categories')
       .populate("work")
+      .populate("city")
       .populate('country');
       var newUser = update.toObject();
       var subs = []
       var country = null
       var work = null
+      var city = null
       if(newUser.country){
         country = {
           _id: newUser.country._id,
@@ -441,6 +453,13 @@ exports.verify = async (req, reply) => {
           _id: newUser.work._id,
           title: newUser.work[`${language}Name`],
           description: newUser.work[`${language}Description`],
+        }
+      }
+      if(newUser.city){
+        city = {
+          _id: newUser.city._id,
+          title: newUser.city[`${language}Name`],
+          description: newUser.city[`${language}Description`],
         }
       }
       if(newUser.categories){
@@ -457,6 +476,7 @@ exports.verify = async (req, reply) => {
       newUser.country = country
       newUser.categories = subs
       newUser.work = work
+      newUser.city = city
       var orderNo = `#${utils.makeid(6)}`;
       const settings = await setting.findOne({code:"WALLET_REFERAL"});
       await NewPayment(update._id, orderNo, "دعوة من احد الأصدقاء", "+" , Number(settings.value), "Online")
@@ -644,11 +664,13 @@ exports.updateProfile = async (req, reply) => {
         .populate("categories")
         .populate("country")
         .populate("work")
+        .populate("city")
         .select();
         var newUser = _newUser.toObject();
         var subs = []
         var country = null
         var work = null
+        var city = null
         if(newUser.country){
           country = {
             _id: newUser.country._id,
@@ -660,6 +682,13 @@ exports.updateProfile = async (req, reply) => {
             _id: newUser.work._id,
             title: newUser.work[`${language}Name`],
             description: newUser.work[`${language}Description`],
+          }
+        }
+        if(newUser.city){
+          city = {
+            _id: newUser.city._id,
+            title: newUser.city[`${language}Name`],
+            description: newUser.city[`${language}Description`],
           }
         }
         if(newUser.categories){
@@ -675,6 +704,7 @@ exports.updateProfile = async (req, reply) => {
         newUser.country = country
         newUser.categories = subs
         newUser.work = work
+        newUser.city = city
 
         reply
           .code(200)
