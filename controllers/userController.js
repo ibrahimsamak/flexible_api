@@ -477,13 +477,13 @@ exports.verify = async (req, reply) => {
       newUser.categories = subs
       newUser.work = work
       newUser.city = city
-      var orderNo = `#${utils.makeid(6)}`;
-      const settings = await setting.findOne({code:"WALLET_REFERAL"});
-      await NewPayment(update._id, orderNo, "دعوة من احد الأصدقاء", "+" , Number(settings.value), "Online")
-      if(req.body.by && req.body.by != "") {
-        console.log(req.body.by)
-        await NewPayment(req.body.by, orderNo, "دعوة من احد الأصدقاء", "+", Number(settings.value), "Online")
-      }
+      //var orderNo = `#${utils.makeid(6)}`;
+      // const settings = await setting.findOne({code:"WALLET_REFERAL"});
+      // await NewPayment(update._id, orderNo, "دعوة من احد الأصدقاء", "+" , Number(settings.value), "Online")
+      // if(req.body.by && req.body.by != "") {
+      //   console.log(req.body.by)
+      //   await NewPayment(req.body.by, orderNo, "دعوة من احد الأصدقاء", "+", Number(settings.value), "Online")
+      // }
 
       reply
         .code(200)
