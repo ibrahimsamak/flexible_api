@@ -101,8 +101,8 @@ exports.getCounterOrdersWithStatus = async (req, reply) => {
 exports.getCounterUsers = async (req, reply) => {
   try {
 
-    const _Supplier = await Users.countDocuments({register_type:'personal'});
-    const _Users = await Users.countDocuments({register_type:'company'});
+    const _Supplier = await Users.countDocuments({app_type:'provider'});
+    const _Users = await Users.countDocuments({app_type:'customer'});
     const _Admin = await Admin.countDocuments();
     const _Orders = await Order.countDocuments();
 
