@@ -168,6 +168,21 @@ exports.addOrder = async (req, reply) => {
             }
           }
 
+          let _Notification = new Notifications({
+            fromId: userId,
+            user_id: USER_TYPE.PANEL,
+            title: NOTIFICATION_TITILES.ORDERS,
+            msg: msg,
+            dt_date: getCurrentDateTime(),
+            type: NOTIFICATION_TYPE.ORDERS,
+            body_parms: rs._id,
+            isRead: false,
+            fromName: "",
+            toName: "",
+          });
+           _Notification.save();
+
+
           reply
           .code(200)
           .send(
@@ -338,6 +353,20 @@ exports.updateOffer = async (req, reply) => {
         ""
       );
   
+      let _Notification = new Notifications({
+        fromId: userObj._id,
+        user_id: USER_TYPE.PANEL,
+        title: NOTIFICATION_TITILES.ORDERS,
+        msg: msg,
+        dt_date: getCurrentDateTime(),
+        type: NOTIFICATION_TYPE.ORDERS,
+        body_parms: sp._id,
+        isRead: false,
+        fromName: "",
+        toName: "",
+      });
+       _Notification.save();
+
       reply
       .code(200)
       .send(
@@ -367,7 +396,7 @@ exports.updateOrder = async (req, reply) => {
       var msg_updated = `تم التعديل على الطلب من قبل الفني يرجى تأكيد العملية`;
       var msg_prefinished = `تم تنفيذ الخدمة من قبل العميل يرجى تأكيد العملية`;
       var msg_finished = `تم الانتهاء من تنفيذ الطلب بنجاح`;
-      var msg_canceled_by_driver = `تم الالغاء من قبل السائق`;
+      var msg_canceled_by_driver = `تم الالغاء الطلب `;
       var msg_canceled_by_user = `تم الغاء الطلب من قبل الزبون`;
       
       if(req.body.status == ORDER_STATUS.progress) {
@@ -446,7 +475,39 @@ exports.updateOrder = async (req, reply) => {
         if(emplployee)
           await CreateGeneralNotification(emplployee.fcmToken, NOTIFICATION_TITILES.ORDERS, msg, NOTIFICATION_TYPE.ORDERS, check._id, check.user._id, emplployee._id, "", "");
       }
+      if(req.body.status == ORDER_STATUS.canceled_by_admin){
+        msg = msg_canceled_by_driver;
+        if(check.status != ORDER_STATUS.new && check.status != ORDER_STATUS.accpeted ){
+          reply
+          .code(200)
+          .send(
+            errorAPI(
+              language,
+              400,
+              MESSAGE_STRING_ARABIC.CANCEL_ORDER_FAILED,
+              MESSAGE_STRING_ENGLISH.CANCEL_ORDER_FAILED
+            )
+          );
+        return;
+        }
+        await Order.findByIdAndUpdate( req.params.id, { status: req.body.status, canceled_note: req.body.notes },{ new: true })
+      }
       await Order.findByIdAndUpdate( req.params.id, { status: req.body.status },{ new: true })
+
+      let _Notification = new Notifications({
+        fromId: check.user._id,
+        user_id: USER_TYPE.PANEL,
+        title: NOTIFICATION_TITILES.ORDERS,
+        msg: msg,
+        dt_date: getCurrentDateTime(),
+        type: NOTIFICATION_TYPE.ORDERS,
+        body_parms: check._id,
+        isRead: false,
+        fromName: "",
+        toName: "",
+      });
+       _Notification.save();
+
 
       reply
       .code(200)
@@ -2865,6 +2926,64 @@ exports.getEmployeesOrder = async (req, reply) => {
       )
     );
     return;
+  } catch (err) {
+    reply.code(200).send(errorAPI(language, 400, err.message, err.message));
+    return;
+  }
+};
+
+exports.getSingleOrders = async (req, reply) => {
+  const language = req.headers["accept-language"];
+  try {
+    const item = await Order.findById(req.query.id)
+      .sort({ _id: -1 })
+      .populate({ path: "offers.user", populate: { path: "user" } })
+      .populate({
+        path: "user",
+        populate: {
+          path: "categories",
+        },
+      })
+      .populate({
+        path: "user",
+        populate: {
+          path: "country",
+        },
+      })
+      .populate({
+        path: "user",
+        populate: {
+          path: "work",
+        },
+      })
+      .populate({
+        path: "provider",
+        populate: {
+          path: "categories",
+        },
+      })
+      .populate({
+        path: "provider",
+        populate: {
+          path: "country",
+        },
+      })
+      .populate({
+        path: "provider",
+        populate: {
+          path: "work",
+        },
+      })
+      .populate("category")
+      .select();
+
+    const response = {
+      status: true,
+      code: 200,
+      message: "تمت العملية بنجاح",
+      items: item,
+    };
+    reply.code(200).send(response);
   } catch (err) {
     reply.code(200).send(errorAPI(language, 400, err.message, err.message));
     return;

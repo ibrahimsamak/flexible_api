@@ -12,6 +12,7 @@ const {
   encryptPassword,
   decryptPasswordfunction,
   handleError,
+  makeid,
 } = require("../utils/utils");
 const { success, errorAPI } = require("../utils/responseApi");
 const {
@@ -30,8 +31,18 @@ exports.getAdmins = async (req, reply) => {
   try {
     var page = parseFloat(req.query.page, 10);
     var limit = parseFloat(req.query.limit, 10);
-    const total = await Admin.find().countDocuments();
-    const item = await Admin.find()
+    var query = {}
+    if(req.query.email && req.query.email != ""){
+      query["email"] = req.query.email
+    }
+    if(req.query.name && req.query.name != ""){
+      query["name"] = req.query.full_name
+    }
+    if(req.query.phone_number && req.query.phone_number != ""){
+      query["phone_number"] = req.query.phone_number
+    }
+    const total = await Admin.find(query).countDocuments();
+    const item = await Admin.find(query)
       .sort({ _id: -1 })
       .skip(page * limit)
       .limit(limit);
@@ -46,6 +57,33 @@ exports.getAdmins = async (req, reply) => {
         totalPages: Math.floor(total / limit),
         pageNumber: page,
       },
+    };
+    reply.send(response);
+  } catch (err) {
+    throw boom.boomify(err);
+  }
+};
+
+exports.getExcelAdmins = async (req, reply) => {
+  try {
+    var query = {}
+    if(req.query.email && req.query.email != ""){
+      query["email"] = req.query.email
+    }
+    if(req.query.name && req.query.name != ""){
+      query["name"] = req.query.full_name
+    }
+    if(req.query.phone_number && req.query.phone_number != ""){
+      query["phone_number"] = req.query.phone_number
+    }
+    const item = await Admin.find(query)
+      .sort({ _id: -1 })
+
+    const response = {
+      status_code: 200,
+      status: true,
+      message: "تمت العملية بنجاح",
+      items: item,
     };
     reply.send(response);
   } catch (err) {
@@ -201,6 +239,143 @@ exports.updateMyProfile = async (req, reply) => {
   }
 };
 
+exports.resetAdmin = async (req, reply) => {
+  const language = req.headers["accept-language"];
+  try {
+    const _password = makeid(6)
+    var msg = `تم اعادة ضبط كلمة المرور الخاصة بكم وهي: ${_password}`;
+    const pass = encryptPassword(_password);
+    const Admins = await Admin.findOne({
+      $and: [
+        { phone_number: String(req.body.email).toLowerCase() }
+      ],
+    });
+
+    const _providers = await Supplier.findOne({
+      $and: [
+        { phone_number: String(req.body.email).toLowerCase() },
+        { isDeleted:false }
+      ],
+    });
+
+    const _supervisor = await Supervisor.findOne({
+      $and: [
+        { phone_number: String(req.body.email).toLowerCase() },
+        { isDeleted:false }
+      ],
+    });
+
+    if (Admins) {
+      const ـuser = await Admin.findByIdAndUpdate(
+        Admins._id,
+        {
+          password: pass,
+        },
+        { new: true }
+      );
+
+      sendSMS(req.body.email, "", "", msg)
+      reply
+        .code(200)
+        .send(
+          success(
+            language,
+            200,
+            MESSAGE_STRING_ARABIC.SUCCESS,
+            MESSAGE_STRING_ENGLISH.SUCCESS,
+            {}
+          )
+        );
+      return;
+    } else if (_providers) {
+      if (_providers.isBlock == true) {
+        reply
+          .code(200)
+          .send(
+            errorAPI(
+              language,
+              400,
+              MESSAGE_STRING_ARABIC.USER_BLOCK,
+              MESSAGE_STRING_ENGLISH.USER_BLOCK
+            )
+          );
+        return;
+      } else {
+        const ـuser = await Supplier.findByIdAndUpdate(
+          _providers._id,
+          {
+            password: pass,
+          },
+          { new: true }
+        );
+        sendSMS(req.body.email, "", "", msg)
+        reply
+          .code(200)
+          .send(
+            success(
+              language,
+              200,
+              MESSAGE_STRING_ARABIC.SUCCESS,
+              MESSAGE_STRING_ENGLISH.SUCCESS,
+              {}
+            )
+          );
+        return;
+      }
+    } else if (_supervisor) {
+      if (_supervisor.isBlock == true) {
+        reply
+          .code(200)
+          .send(
+            errorAPI(
+              language,
+              400,
+              MESSAGE_STRING_ARABIC.USER_BLOCK,
+              MESSAGE_STRING_ENGLISH.USER_BLOCK
+            )
+          );
+        return;
+      } else {
+        const ـuser = await Supervisor.findByIdAndUpdate(
+          _supervisor._id,
+          {
+            password: pass,
+          },
+          { new: true }
+        );
+        sendSMS(req.body.email, "", "", msg)
+        reply
+          .code(200)
+          .send(
+            success(
+              language,
+              200,
+              MESSAGE_STRING_ARABIC.SUCCESS,
+              MESSAGE_STRING_ENGLISH.SUCCESS,
+              { }
+            )
+          );
+        return;
+      }
+    }  
+    else {
+      reply
+        .code(200)
+        .send(
+          errorAPI(
+            language,
+            400,
+            MESSAGE_STRING_ARABIC.USER_PHONE_ERROR,
+            MESSAGE_STRING_ENGLISH.USER_PHONE_ERROR
+          )
+        );
+      return;
+    }
+  } catch (err) {
+    throw boom.boomify(err);
+  }
+};
+
 //login
 exports.login = async (req, reply) => {
   const language = "ar";
@@ -230,6 +405,19 @@ exports.login = async (req, reply) => {
     });
 
     if (Admins) {
+      if (Admins.isBlock == true) {
+        reply
+          .code(200)
+          .send(
+            errorAPI(
+              language,
+              400,
+              MESSAGE_STRING_ARABIC.USER_BLOCK,
+              MESSAGE_STRING_ENGLISH.USER_BLOCK
+            )
+          );
+        return;
+      } 
       const ـuser = await Admin.findByIdAndUpdate(
         Admins._id,
         {
@@ -243,11 +431,9 @@ exports.login = async (req, reply) => {
         },
         { new: true }
       );
-
       let newUser = ـuser.toObject();
       newUser.expire = moment(new Date()).add(120, "days").toDate();
       newUser.type = ACTORS.ADMIN;
-
       reply
         .code(200)
         .send(
@@ -481,6 +667,27 @@ exports.changePassword = async (req, reply) => {
         reply.code(200).send(response);
       }
     }
+  } catch (err) {
+    throw boom.boomify(err);
+  }
+};
+
+exports.blockAdmin = async (req, reply) => {
+  try {
+    const user = await Admin.findByIdAndUpdate(
+      req.body._id,
+      {
+        isBlock: req.body.isBlock,
+      },
+      { new: true }
+    );
+    const response = {
+      status_code: 200,
+      status: true,
+      message: "تمت العملية بنجاح",
+      items: user,
+    };
+    reply.code(200).send(response);
   } catch (err) {
     throw boom.boomify(err);
   }

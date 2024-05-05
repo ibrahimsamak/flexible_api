@@ -1,3 +1,4 @@
+const { boolean } = require("@hapi/joi");
 const mongoose = require("mongoose");
 
 const Adminschema = mongoose.Schema(
@@ -32,6 +33,11 @@ const Adminschema = mongoose.Schema(
     roles: {
       type: [{ name: { type: String }, sort: { type: Number } }],
     },
+    isBlock:{
+      type: Boolean,
+      required:false,
+      default:false
+    }
   },
   { versionKey: false }
 );

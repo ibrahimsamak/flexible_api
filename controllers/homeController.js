@@ -259,23 +259,14 @@ exports.getProviderTarget = async (req, reply) => {
 exports.getTopProductsPlace = async (req, reply) => {
   try {
     var query = {};
-    // if (req.user.userType != USER_TYPE.ADMIN)
-    //   query["provider_id"] = req.user._id;
-    query["isDeleted"] = false;
-    var products = [];
-    const item = await Product_Price.find(query)
-      .populate("place_id")
-      .populate("category_id");
-    item.forEach((element) => {
-      products.push(element);
-    });
-
-    var _result = lodash(products)
-      .groupBy("place_id._id")
+    query["status"] = {$in: [ORDER_STATUS.finished, ORDER_STATUS.prefinished, ORDER_STATUS.rated] };
+    const item = await Order.find(query).populate("city")
+    var _result = lodash(item)
+      .groupBy("city._id")
       .map(function (items, _name) {
         if (items.length > 0) {
-        if(items[0].place_id){
-          return { name: items[0].place_id.arName, value: items.length };
+        if(items[0].city){
+          return { name: items[0].city.arName, value: items.length };
         }
       }
       })
@@ -298,55 +289,30 @@ exports.getTopProductsPlace = async (req, reply) => {
 
 exports.getProviderOrdersPerYear = async (req, reply) => {
   try {
-    var supplier_arr = [];
-    var orderedResult = [];
-    var count = 0;
     var query = {};
-    if (req.params.id != null && req.params.id != "") {
-      query["_id"] = req.params.id;
-    }
-    var sup = await Supplier.find({ $and: [{ isDeleted: false }, query]}).countDocuments();
-    const result = await Supplier.find({ $and: [{ isDeleted: false }, query] });
-
-    result.forEach(async function (element) {
-      var cancelOrder = await Order.find({
-        $and: [{ supplier_id: element._id }, { StatusId: { $in: [4, 5, 6] } }],
-      }).countDocuments();
-      var DoneOrder = await Order.find({
-        $and: [{ supplier_id: element._id }, { StatusId: 4 }],
-      }).countDocuments();
-      var allOrders = await Order.find({
-        supplier_id: element._id,
-      }).countDocuments();
-
-      orderedResult.push(
-        {
-          name: "الطلبات الملغية",
-          value: cancelOrder,
-        },
-        {
-          name: "الطلبات المكتملة",
-          value: DoneOrder,
-        },
-        {
-          name: "الطلبات الكلية",
-          value: allOrders,
+    query["status"] = {$in: [ORDER_STATUS.finished, ORDER_STATUS.prefinished, ORDER_STATUS.rated] };
+    const item = await Order.find(query).populate("category")
+    var _result = lodash(item)
+      .groupBy("category._id")
+      .map(function (items, _name) {
+        if (items.length > 0) {
+        if(items[0].category){
+          return { name: items[0].category.arName, value: items.length };
         }
-      );
-
-      supplier_arr.push({
-        name: element.name,
-        series: orderedResult,
-      });
-      orderedResult = [];
-      count++;
-      if (count === sup) {
-        count = 0;
-
-        reply.send(supplier_arr);
-        // reply.end()
       }
-    });
+      })
+      .value();
+
+    var orderedResult = lodash.orderBy(_result, ["count"], ["desc"]);
+    var FinalResult = lodash.take(orderedResult, 10);
+
+    const response = {
+      status_code: 200,
+      status: true,
+      message: "تمت العملية بنجاح",
+      items: FinalResult,
+    };
+    reply.send(response);
   } catch (err) {
     throw boom.boomify(err);
   }

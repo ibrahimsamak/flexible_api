@@ -25,10 +25,22 @@ const admin_routes = [
   },
   //admins
   {
+    method: "POST",
+    url: "/api/admin/block",
+    beforeHandler: [auth.getAdminToken],
+    handler: adminController.blockAdmin,
+  },
+  {
     method: "GET",
     url: "/api/admin/list",
     beforeHandler: [auth.getAdminToken],
     handler: adminController.getAdmins,
+  },
+  {
+    method: "GET",
+    url: "/api/admin/excel",
+    beforeHandler: [auth.getAdminToken],
+    handler: adminController.getExcelAdmins,
   },
   {
     method: "GET",
@@ -59,6 +71,11 @@ const admin_routes = [
     url: "/api/admin/add",
     beforeHandler: [auth.getAdminToken],
     handler: adminController.addAdmin,
+  },
+  {
+    method: "POST",
+    url: "/api/admin/resetAdmin",
+    handler: adminController.resetAdmin,
   },
   {
     method: "POST",
@@ -361,11 +378,30 @@ const admin_routes = [
   },
 
   //notification
+  
+  {
+    method: "POST",
+    url: "/api/admin/notification2",
+    beforeHandler: [auth.getAdminToken],
+    handler: notificationController.getAdminNotificationIn,
+  },
   {
     method: "POST",
     url: "/api/admin/notification",
     beforeHandler: [auth.getAdminToken],
     handler: notificationController.getAdminNotification,
+  },
+  {
+    method: "POST",
+    url: "/api/admin/excel-notification",
+    beforeHandler: [auth.getAdminToken],
+    handler: notificationController.getAdminExcelNotification,
+  },
+  {
+    method: "POST",
+    url: "/api/admin/excel-notification2",
+    beforeHandler: [auth.getAdminToken],
+    handler: notificationController.getAdminExcelNotification2,
   },
   {
     method: "GET",
@@ -790,6 +826,12 @@ const admin_routes = [
   },
 
   //orders
+  {
+    method: "GET",
+    url: "/api/admin/single-orders",
+    beforeHandler: [auth.getAdminToken],
+    handler: orderController.getSingleOrders,
+  },
   {
     method: "POST",
     url: "/api/admin/orders",
