@@ -139,9 +139,11 @@ exports.getSingleUsers = async (req, reply) => {
     .populate("work")
     .populate("country")
     .select();
+    
     var newUser = _Users.toObject();
     var subs = []
     var country = null
+    var work = null
     if(newUser.country){
       country = {
         _id: newUser.country._id,
@@ -595,7 +597,7 @@ exports.forgetPassword = async (req, reply) => {
 // Update an existing Users
 exports.updateProfile = async (req, reply) => {
   const language = req.headers["accept-language"];
-  // try {
+  try {
     if (
       !req.body.email ||
       !req.body.full_name ||
@@ -720,10 +722,10 @@ exports.updateProfile = async (req, reply) => {
         return;
    
     }
-  // } catch (err) {
-  //   reply.code(200).send(errorAPI(language, 400, err.message, err.message));
-  //   return;
-  // }
+  } catch (err) {
+    reply.code(200).send(errorAPI(language, 400, err.message, err.message));
+    return;
+  }
 };
 
 exports.uploadUserPhoto = async (req, reply) => {
