@@ -139,7 +139,7 @@ exports.getSingleUsers = async (req, reply) => {
     .populate("work")
     .populate("country")
     .select();
-    
+
     var newUser = _Users.toObject();
     var subs = []
     var country = null
@@ -642,7 +642,7 @@ exports.updateProfile = async (req, reply) => {
           req.user._id,
           {
             image: req.body.image,
-            id_image: req.body.id_img,
+            id_image: req.body.id_image,
             email: String(req.body.email).toLowerCase(),
             full_name: req.body.full_name,
             bio: req.body.bio,
