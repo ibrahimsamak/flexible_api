@@ -156,25 +156,26 @@ exports.getAdminNotification = async (req, reply) => {
     // if (req.user.userType == USER_TYPE.ADMIN)
     //   query["user_id"] = USER_TYPE.PANEL;
     // if (req.user.userType != USER_TYPE.ADMIN) query["user_id"] = req.user._id;
-    const total = await Notifications.find(query).countDocuments();
+    //const total = await Notifications.find(query).countDocuments();
+    var new_arr = []
     const _Notification = await Notifications.find(query)
       .sort({ dt_date: -1 })
-      .skip(page * limit)
-      .limit(limit);
+      // .skip(page * limit)
+      // .limit(limit);
 
+      _Notification.forEach(element => {
+         var find = new_arr.find(x=>String(x.msg) == String(element.msg));
+         if(!find){
+          new_arr.push(element)
+         }
+      });
     reply.code(200).send(
       success(
         language,
         200,
         MESSAGE_STRING_ARABIC.SUCCESS,
         MESSAGE_STRING_ENGLISH.SUCCESS,
-        _Notification,
-        {
-          size: _Notification.length,
-          totalElements: total,
-          totalPages: Math.floor(total / limit),
-          pageNumber: page,
-        }
+        new_arr
       )
     );
   } catch (err) {
@@ -205,11 +206,16 @@ exports.getAdminNotificationIn = async (req, reply) => {
     // if (req.user.userType == USER_TYPE.ADMIN)
     //   query["user_id"] = USER_TYPE.PANEL;
     // if (req.user.userType != USER_TYPE.ADMIN) query["user_id"] = req.user._id;
-    const total = await Notifications.find(query).countDocuments();
+    // const total = await Notifications.find(query).countDocuments();
+    var new_arr = []
     const _Notification = await Notifications.find(query)
       .sort({ dt_date: -1 })
-      .skip(page * limit)
-      .limit(limit);
+      // .skip(page * limit)
+      // .limit(limit);
+
+    _Notification.forEach(element => {
+      new_arr.push(element)
+    });
 
     reply.code(200).send(
       success(
@@ -217,13 +223,13 @@ exports.getAdminNotificationIn = async (req, reply) => {
         200,
         MESSAGE_STRING_ARABIC.SUCCESS,
         MESSAGE_STRING_ENGLISH.SUCCESS,
-        _Notification,
-        {
-          size: _Notification.length,
-          totalElements: total,
-          totalPages: Math.floor(total / limit),
-          pageNumber: page,
-        }
+        new_arr,
+        // {
+        //   size: _Notification.length,
+        //   totalElements: total,
+        //   totalPages: Math.floor(total / limit),
+        //   pageNumber: page,
+        // }
       )
     );
   } catch (err) {
@@ -249,7 +255,16 @@ exports.getAdminExcelNotification = async (req, reply) => {
         },
       });
     }
+
+    var new_arr = []
     const _Notification = await Notifications.find(query).sort({ dt_date: -1 })
+
+    _Notification.forEach(element => {
+      var find = new_arr.find(x=>String(x.msg) == String(element.msg));
+      if(!find){
+       new_arr.push(element)
+      }
+    });
 
     reply.code(200).send(
       success(
@@ -257,7 +272,7 @@ exports.getAdminExcelNotification = async (req, reply) => {
         200,
         MESSAGE_STRING_ARABIC.SUCCESS,
         MESSAGE_STRING_ENGLISH.SUCCESS,
-        _Notification
+        new_arr
       )
     );
   } catch (err) {
@@ -283,15 +298,22 @@ exports.getAdminExcelNotification2 = async (req, reply) => {
         },
       });
     }
-    const _Notification = await Notifications.find(query).sort({ dt_date: -1 })
 
+    var new_arr = []
+    const _Notification = await Notifications.find(query).sort({ dt_date: -1 })
+    _Notification.forEach(element => {
+      var find = new_arr.find(x=>String(x.msg) == String(element.msg));
+      if(!find){
+       new_arr.push(element)
+      }
+    });
     reply.code(200).send(
       success(
         language,
         200,
         MESSAGE_STRING_ARABIC.SUCCESS,
         MESSAGE_STRING_ENGLISH.SUCCESS,
-        _Notification
+        new_arr
       )
     );
   } catch (err) {

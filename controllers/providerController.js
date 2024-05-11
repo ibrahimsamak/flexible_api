@@ -472,6 +472,7 @@ exports.updateProvider = async (req, reply) => {
             full_name: req.raw.body.full_name,
             address: req.raw.body.address,
             categories: JSON.parse(req.raw.body.categories),
+            city: req.raw.body.city,
           },
           { new: true, runValidators: true },
           function (err, model) {
@@ -515,6 +516,7 @@ exports.updateProvider = async (req, reply) => {
             full_name: req.raw.body.full_name,
             address: req.raw.body.address,
             categories: JSON.parse(req.raw.body.categories),
+            city: req.raw.body.city,
           },
           { new: true, runValidators: true },
           function (err, model) {

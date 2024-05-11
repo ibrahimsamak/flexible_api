@@ -432,7 +432,7 @@ exports.login = async (req, reply) => {
         { new: true }
       );
       let newUser = ـuser.toObject();
-      newUser.expire = moment(new Date()).add(120, "days").toDate();
+      newUser.expire = moment(new Date()).add(1, "hours").toDate();
       newUser.type = ACTORS.ADMIN;
       reply
         .code(200)
@@ -477,7 +477,7 @@ exports.login = async (req, reply) => {
         );
 
         let newUser = ـuser.toObject();
-        newUser.expire = moment(new Date()).add(120, "days").toDate();
+        newUser.expire = moment(new Date()).add(1, "hours").toDate();
         newUser.type = ACTORS.STORE;
         newUser.full_name = ـuser.name
         reply
@@ -524,7 +524,7 @@ exports.login = async (req, reply) => {
         );
 
         let newUser = ـuser.toObject();
-        newUser.expire = moment(new Date()).add(120, "days").toDate();
+        newUser.expire = moment(new Date()).add(1, "hours").toDate();
         newUser.type = ACTORS.SUPERVISOR;
         newUser.full_name = ـuser.name
 

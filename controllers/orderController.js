@@ -172,7 +172,7 @@ exports.addOrder = async (req, reply) => {
             fromId: userId,
             user_id: USER_TYPE.PANEL,
             title: NOTIFICATION_TITILES.ORDERS,
-            msg: msg,
+            msg: msg + " : " + rs.order_no,
             dt_date: getCurrentDateTime(),
             type: NOTIFICATION_TYPE.ORDERS,
             body_parms: rs._id,
@@ -323,12 +323,12 @@ exports.updateOffer = async (req, reply) => {
       // var msg_not_attend = `بم يتم حضور الزبون `;
       
       if(req.body.status == PASSENGER_STATUS.accept_offer){
-        msg = msg_accpet;
+        msg = msg_accpet + " : " + sp.order_no;;
         var emp = sp.offers.find(x=>x.status == PASSENGER_STATUS.accept_offer)
         await Order.findByIdAndUpdate(sp._id, { status: ORDER_STATUS.accpeted, provider: emp.user, total: emp.price}, { new: true } )
       }
       if(req.body.status == PASSENGER_STATUS.reject_offer){
-        msg = msg_reject;
+        msg = msg_reject + " : " + sp.order_no;
       }
 
       // if(req.body.status == 'attend'){
@@ -353,19 +353,19 @@ exports.updateOffer = async (req, reply) => {
         ""
       );
   
-      let _Notification = new Notifications({
-        fromId: userObj._id,
-        user_id: USER_TYPE.PANEL,
-        title: NOTIFICATION_TITILES.ORDERS,
-        msg: msg,
-        dt_date: getCurrentDateTime(),
-        type: NOTIFICATION_TYPE.ORDERS,
-        body_parms: sp._id,
-        isRead: false,
-        fromName: "",
-        toName: "",
-      });
-       _Notification.save();
+      // let _Notification = new Notifications({
+      //   fromId: userObj._id,
+      //   user_id: USER_TYPE.PANEL,
+      //   title: NOTIFICATION_TITILES.ORDERS,
+      //   msg: "تم التعديل على حالة الطلب",
+      //   dt_date: getCurrentDateTime(),
+      //   type: NOTIFICATION_TYPE.ORDERS,
+      //   body_parms: sp._id,
+      //   isRead: false,
+      //   fromName: "",
+      //   toName: "",
+      // });
+      //  _Notification.save();
 
       reply
       .code(200)
@@ -498,7 +498,7 @@ exports.updateOrder = async (req, reply) => {
         fromId: check.user._id,
         user_id: USER_TYPE.PANEL,
         title: NOTIFICATION_TITILES.ORDERS,
-        msg: msg,
+        msg: msg + " : " + check.order_no,
         dt_date: getCurrentDateTime(),
         type: NOTIFICATION_TYPE.ORDERS,
         body_parms: check._id,
@@ -1724,7 +1724,7 @@ exports.updateOrderByUser = async (req, reply) => {
             fromId: orderDetails.user_id._id,
             user_id: USER_TYPE.PANEL,
             title: NOTIFICATION_TITILES.ORDERS,
-            msg: msg,
+            msg: msg + " : " + orderDetails.order_no,
             dt_date: getCurrentDateTime(),
             type: NOTIFICATION_TYPE.ORDERS,
             body_parms: orderDetails._id,
