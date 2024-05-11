@@ -302,10 +302,7 @@ exports.getAdminExcelNotification2 = async (req, reply) => {
     var new_arr = []
     const _Notification = await Notifications.find(query).sort({ dt_date: -1 })
     _Notification.forEach(element => {
-      var find = new_arr.find(x=>String(x.msg) == String(element.msg));
-      if(!find){
-       new_arr.push(element)
-      }
+      new_arr.push(element)
     });
     reply.code(200).send(
       success(
